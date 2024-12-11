@@ -1,0 +1,23 @@
+{
+  "name": "next-campaign",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "import": "./dist/src/index.js"
+  },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Lucas Koyama",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "just-validate": "^4.3.0"
+  }
+}

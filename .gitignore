@@ -1,0 +1,35 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+
+# Build output
+dist/
+build/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.swp
+
+# Coverage directory
+coverage/
+
+# Optional npm cache directory
+.npm/
+
+# Lockfiles (if you want to ignore them for some reason, though it's generally recommended to commit them)
+# package-lock.json
+# yarn.lock
