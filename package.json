@@ -15,9 +15,11 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/lodash": "^4.17.13",
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "just-validate": "^4.3.0"
+    "just-validate": "^4.3.0",
+    "lodash": "^4.17.21"
   }
 }

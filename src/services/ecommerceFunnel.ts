@@ -1,35 +1,32 @@
 import NextCampaignApi from "../api/nextCampaignApi";
+import _ from "lodash";
 import JustValidate from "just-validate";
+
+type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+}
 
 interface FieldElementProperties {
   selector: string;
   errorMessage: string;
 }
 
+interface IAddressElementsProperties {
+  first_name: FieldElementProperties;
+  last_name: FieldElementProperties;
+  address: FieldElementProperties;
+  city: FieldElementProperties;
+  state: FieldElementProperties;
+  postcode: FieldElementProperties;
+  country: FieldElementProperties;
+  phone_number: FieldElementProperties;
+  notes: FieldElementProperties;
+}
+
 interface IFunnelElementProperties {
   address: {
-    shipping: {
-      first_name: FieldElementProperties;
-      last_name: FieldElementProperties;
-      address: FieldElementProperties;
-      city: FieldElementProperties;
-      state: FieldElementProperties;
-      postcode: FieldElementProperties;
-      country: FieldElementProperties;
-      phone_number: FieldElementProperties;
-      notes: FieldElementProperties;
-    };
-    billing: {
-      first_name: FieldElementProperties;
-      last_name: FieldElementProperties;
-      address: FieldElementProperties;
-      city: FieldElementProperties;
-      state: FieldElementProperties;
-      postcode: FieldElementProperties;
-      country: FieldElementProperties;
-      phone_number: FieldElementProperties;
-      notes: FieldElementProperties;
-    };
+    shipping: IAddressElementsProperties;
+    billing: IAddressElementsProperties;
   };
   email: FieldElementProperties;
   paymentButton: {
@@ -162,7 +159,7 @@ class EcommerceFunnel {
    */
   constructor(
     campaignApi: NextCampaignApi,
-    elementsCustomProperties: Partial<IFunnelElementProperties> = {}
+    elementsCustomProperties: DeepPartial<IFunnelElementProperties> = {}
   ) {
     this.campaignApi = campaignApi;
 
@@ -182,10 +179,10 @@ class EcommerceFunnel {
   }
 
   getPageFields(
-    fields: Record<string, FieldElementProperties>
+    fields: IAddressElementsProperties
   ): NextAddressFields {
     const $$ = document.querySelector.bind(document);
-    
+
     return {
       country: $$(fields.country.selector) as
         | HTMLInputElement
@@ -204,33 +201,9 @@ class EcommerceFunnel {
   }
 
   mergeCustomPropertiesWithDefault(
-    customProperties: Partial<IFunnelElementProperties>
+    customProperties: DeepPartial<IFunnelElementProperties>
   ): IFunnelElementProperties {
-    return {
-      ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES,
-      ...customProperties,
-
-      address: {
-        ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.address,
-        ...customProperties.address,
-
-        shipping: {
-          ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.address
-            .shipping,
-          ...customProperties.address?.shipping,
-        },
-
-        billing: {
-          ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.address.billing,
-          ...customProperties.address?.billing,
-        },
-      },
-
-      paymentButton: {
-        ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.paymentButton,
-        ...customProperties.paymentButton,
-      },
-    };
+    return _.merge({}, EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES, customProperties);
   }
 
   private initializeSaveLeadEventListeners() {
