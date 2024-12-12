@@ -1,32 +1,37 @@
 import NextCampaignApi from "../api/nextCampaignApi";
 import JustValidate from "just-validate";
 
-interface ICheckoutSelectors {
+interface FieldElementProperties {
+  selector: string;
+  errorMessage: string;
+}
+
+interface IFunnelElementProperties {
   address: {
     shipping: {
-      first_name: string;
-      last_name: string;
-      address: string;
-      city: string;
-      state: string;
-      postcode: string;
-      country: string;
-      phone_number: string;
-      notes: string;
+      first_name: FieldElementProperties;
+      last_name: FieldElementProperties;
+      address: FieldElementProperties;
+      city: FieldElementProperties;
+      state: FieldElementProperties;
+      postcode: FieldElementProperties;
+      country: FieldElementProperties;
+      phone_number: FieldElementProperties;
+      notes: FieldElementProperties;
     };
     billing: {
-      first_name: string;
-      last_name: string;
-      address: string;
-      city: string;
-      state: string;
-      postcode: string;
-      country: string;
-      phone_number: string;
-      notes: string;
+      first_name: FieldElementProperties;
+      last_name: FieldElementProperties;
+      address: FieldElementProperties;
+      city: FieldElementProperties;
+      state: FieldElementProperties;
+      postcode: FieldElementProperties;
+      country: FieldElementProperties;
+      phone_number: FieldElementProperties;
+      notes: FieldElementProperties;
     };
   };
-  email: string;
+  email: FieldElementProperties;
   paymentButton: {
     creditCard: string;
     paypal: string;
@@ -35,7 +40,7 @@ interface ICheckoutSelectors {
 }
 
 interface NextAddressFields {
-  country:  HTMLInputElement | HTMLSelectElement | null;
+  country: HTMLInputElement | HTMLSelectElement | null;
   first_name: HTMLInputElement | null;
   last_name: HTMLInputElement | null;
   line1: HTMLInputElement | null;
@@ -56,88 +61,176 @@ interface IAddressFields {
 class EcommerceFunnel {
   private campaignApi: NextCampaignApi;
 
+  private elementsProperties: IFunnelElementProperties;
+
   private addressFields: IAddressFields | null;
   private customerEmailField: HTMLInputElement | null;
 
-  private static DEFAULT_FUNNEL_FIELDS: ICheckoutSelectors = {
-    address: {
-      shipping: {
-        first_name: "[data-first-name]",
-        last_name: "[data-last-name]",
-        address: "[data-address]",
-        city: "[data-city]",
-        state: "[data-state]",
-        postcode: "[data-zip]",
-        country: "[data-country]",
-        phone_number: "[data-phone]",
-        notes: "[data-notes]",
+  private static DEFAULT_FUNNEL_ELEMENTS_PROPERTIES: IFunnelElementProperties =
+    {
+      address: {
+        shipping: {
+          first_name: {
+            selector: "[data-first-name]",
+            errorMessage: "Invalid shipping first name",
+          },
+          last_name: {
+            selector: "[data-last-name]",
+            errorMessage: "Invalid shipping last name",
+          },
+          address: {
+            selector: "[data-address]",
+            errorMessage: "Invalid shipping address",
+          },
+          city: {
+            selector: "[data-city]",
+            errorMessage: "Invalid shipping city",
+          },
+          state: {
+            selector: "[data-state]",
+            errorMessage: "Invalid shipping state",
+          },
+          postcode: {
+            selector: "[data-zip]",
+            errorMessage: "Invalid shipping zip",
+          },
+          country: {
+            selector: "[data-country]",
+            errorMessage: "Invalid shipping country",
+          },
+          phone_number: {
+            selector: "[data-phone]",
+            errorMessage: "Invalid shipping phone",
+          },
+          notes: {
+            selector: "[data-notes]",
+            errorMessage: "Invalid shipping notes",
+          },
+        },
+        billing: {
+          first_name: {
+            selector: "[data-billing-first-name]",
+            errorMessage: "Invalid shipping first name",
+          },
+          last_name: {
+            selector: "[data-billing-last-name]",
+            errorMessage: "Invalid shipping last name",
+          },
+          address: {
+            selector: "[data-billing-address]",
+            errorMessage: "Invalid shipping address",
+          },
+          city: {
+            selector: "[data-billing-city]",
+            errorMessage: "Invalid shipping city",
+          },
+          state: {
+            selector: "[data-billing-state]",
+            errorMessage: "Invalid shipping state",
+          },
+          postcode: {
+            selector: "[data-billing-zip]",
+            errorMessage: "Invalid shipping zip",
+          },
+          country: {
+            selector: "[data-billing-country]",
+            errorMessage: "Invalid shipping country",
+          },
+          phone_number: {
+            selector: "[data-billing-phone]",
+            errorMessage: "Invalid shipping phone",
+          },
+          notes: {
+            selector: "[data-billing-notes]",
+            errorMessage: "Invalid shipping notes",
+          },
+        },
       },
-      billing: {
-        first_name: "[data-billing-first-name]",
-        last_name: "[data-billing-last-name]",
-        address: "[data-billing-address]",
-        city: "[data-billing-city]",
-        state: "[data-billing-state]",
-        postcode: "[data-billing-zip]",
-        country: "[data-billing-country]",
-        phone_number: "[data-billing-phone]",
-        notes: "[data-notes]",
+      email: {
+        selector: "[data-email]",
+        errorMessage: "Invalid email",
       },
-    },
-    email: "[data-email]",
-    paymentButton: {
-      creditCard: "[data-credit-card-btn]",
-      paypal: "[data-paypal-btn]",
-      applePay: "[data-apple-pay-btn]",
-    },
-  };
+      paymentButton: {
+        creditCard: "[data-credit-card-btn]",
+        paypal: "[data-paypal-btn]",
+        applePay: "[data-apple-pay-btn]",
+      },
+    };
 
   /**
-   * @description Pass the funnel fields and elements to the query selectors
+   * @description Pass query selectors of the funnel fields and the fields validation
    */
   constructor(
     campaignApi: NextCampaignApi,
-    checkoutSelectors: ICheckoutSelectors = EcommerceFunnel.DEFAULT_FUNNEL_FIELDS
+    elementsCustomProperties: Partial<IFunnelElementProperties> = {}
   ) {
     this.campaignApi = campaignApi;
 
-    const { shipping } = checkoutSelectors.address;
-    const shippingElements = {
-      country: document.querySelector(shipping.country) as HTMLInputElement | HTMLSelectElement,
-      first_name: document.querySelector(shipping.first_name) as HTMLInputElement,
-      last_name: document.querySelector(shipping.last_name) as HTMLInputElement,
-      line1: document.querySelector(shipping.address) as HTMLInputElement,
-      line2: document.querySelector(shipping.address) as HTMLInputElement,
-      line3: document.querySelector(shipping.address) as HTMLInputElement,
-      line4: document.querySelector(shipping.city) as HTMLInputElement,
-      notes: document.querySelector(shipping.notes) as HTMLInputElement,
-      phone_number: document.querySelector(shipping.phone_number) as HTMLInputElement,
-      postcode: document.querySelector(shipping.postcode) as HTMLInputElement,
-      state: document.querySelector(shipping.state) as HTMLInputElement | HTMLSelectElement,
-    }
+    this.elementsProperties = this.mergeCustomPropertiesWithDefault(
+      elementsCustomProperties
+    );
 
-    const { billing } = checkoutSelectors.address;
-    const billingElements = {
-      country: document.querySelector(billing.country) as HTMLInputElement | HTMLSelectElement,
-      first_name: document.querySelector(billing.first_name) as HTMLInputElement,
-      last_name: document.querySelector(billing.last_name) as HTMLInputElement,
-      line1: document.querySelector(billing.address) as HTMLInputElement,
-      line2: document.querySelector(billing.address) as HTMLInputElement,
-      line3: document.querySelector(billing.address) as HTMLInputElement,
-      line4: document.querySelector(billing.city) as HTMLInputElement,
-      notes: document.querySelector(billing.notes) as HTMLInputElement,
-      phone_number: document.querySelector(billing.phone_number) as HTMLInputElement,
-      postcode: document.querySelector(billing.postcode) as HTMLInputElement,
-      state: document.querySelector(billing.state) as HTMLInputElement | HTMLSelectElement,
-    }
-
+    const { shipping, billing } = this.elementsProperties.address;
     this.addressFields = {
-      shipping: shippingElements,
-      billing: billingElements,
+      shipping: this.getPageFields(shipping),
+      billing: this.getPageFields(billing),
     };
 
-    this.customerEmailField = document.querySelector(checkoutSelectors.email);
+    this.customerEmailField = document.querySelector(
+      this.elementsProperties.email.selector
+    );
+  }
 
+  getPageFields(
+    fields: Record<string, FieldElementProperties>
+  ): NextAddressFields {
+    const $$ = document.querySelector.bind(document);
+    
+    return {
+      country: $$(fields.country.selector) as
+        | HTMLInputElement
+        | HTMLSelectElement,
+      first_name: $$(fields.first_name.selector) as HTMLInputElement,
+      last_name: $$(fields.last_name.selector) as HTMLInputElement,
+      line1: $$(fields.address.selector) as HTMLInputElement,
+      line2: $$(fields.address.selector) as HTMLInputElement,
+      line3: $$(fields.address.selector) as HTMLInputElement,
+      line4: $$(fields.city.selector) as HTMLInputElement,
+      notes: $$(fields.notes.selector) as HTMLInputElement,
+      phone_number: $$(fields.phone_number.selector) as HTMLInputElement,
+      postcode: $$(fields.postcode.selector) as HTMLInputElement,
+      state: $$(fields.state.selector) as HTMLInputElement | HTMLSelectElement,
+    };
+  }
+
+  mergeCustomPropertiesWithDefault(
+    customProperties: Partial<IFunnelElementProperties>
+  ): IFunnelElementProperties {
+    return {
+      ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES,
+      ...customProperties,
+
+      address: {
+        ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.address,
+        ...customProperties.address,
+
+        shipping: {
+          ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.address
+            .shipping,
+          ...customProperties.address?.shipping,
+        },
+
+        billing: {
+          ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.address.billing,
+          ...customProperties.address?.billing,
+        },
+      },
+
+      paymentButton: {
+        ...EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES.paymentButton,
+        ...customProperties.paymentButton,
+      },
+    };
   }
 
   private initializeSaveLeadEventListeners() {
@@ -148,38 +241,37 @@ class EcommerceFunnel {
       this.addressFields.shipping.last_name &&
       this.addressFields.shipping.phone_number
     ) {
-
     }
   }
 
   getPageRequiredFields(): Array<HTMLInputElement | HTMLSelectElement> {
     const allPossibleFields = [];
-    
+
     if (this.addressFields) {
       const shippingFields = Object.values(this.addressFields.shipping);
       const billingFields = Object.values(this.addressFields.billing);
       allPossibleFields.push(...shippingFields, ...billingFields);
     }
-    
+
     if (this.customerEmailField) {
       allPossibleFields.push(this.customerEmailField);
     }
 
-    const requiredFields = allPossibleFields.filter((field) => field.required);
+    const requiredFields = allPossibleFields.filter((field) => {
+      if (field !== null) {
+        return field.required;
+      }
+    });
 
     return requiredFields;
   }
 
-  storePageValidFieldsValue() {
-
-  }
+  storePageValidFieldsValue() {}
 
   /**
-   * @description Validate the present `required` fields  of the page  that match with the ones passed during initialization of this class
+   * @description Validate the present `required` fields of the page that match with the ones passed during initialization of this class
    */
-  validatePageRequiredFields() {
-
-  }
+  validatePageRequiredFields() {}
 
   createOrder() {
     const validFields = sessionStorage.getItem("validFields");
