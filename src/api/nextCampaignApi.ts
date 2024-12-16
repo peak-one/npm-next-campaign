@@ -79,12 +79,12 @@ class NextCampaignApi {
   /**
    * @description Used to save a potencial customer data `(lead)` since it creates an open cart with some products inside before the creation of the order itself.
    */
-  async cartsCreate(formData: CartForm): Promise<Partial<Cart>> {
-    return await this.post("carts", formData);
+  async cartsCreate(body: CartForm): Promise<Partial<Cart>> {
+    return await this.post("carts", body);
   }
 
-  async ordersCreate(formData: OrderForm): Promise<Partial<Order>> {
-    return await this.post("orders", formData);
+  async ordersCreate(body: OrderForm): Promise<Partial<Order>> {
+    return await this.post("orders", body);
   }
 
   /**
@@ -93,9 +93,9 @@ class NextCampaignApi {
    */
   async ordersUpsellCreate(
     orderRefId: string,
-    formData: UpsellForm
+    body: UpsellForm
   ): Promise<Partial<Order>> {
-    return await this.post(`orders/${orderRefId}/upsells`, formData);
+    return await this.post(`orders/${orderRefId}/upsells`, body);
   }
 
   /**

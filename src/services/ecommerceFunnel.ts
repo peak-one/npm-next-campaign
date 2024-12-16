@@ -1,161 +1,36 @@
 import NextCampaignApi from "../api/nextCampaignApi";
 import _ from "lodash";
-import JustValidate from "just-validate";
+import JustValidate, { FieldInterface } from "just-validate";
+
+import {
+  IFunnelElementProperties,
+  IFieldElementProperties,
+} from "../types/services/ecommerceFunnel";
+
+import defaultFunnelElementsProps from "../configs/services/defaultFunnelElementsProps";
+import ParamOrdersCreate from "../types/services/ParamOrdersCreate";
+import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-}
-
-interface FieldElementProperties {
-  selector: string;
-  errorMessage: string;
-}
-
-interface IAddressElementsProperties {
-  first_name: FieldElementProperties;
-  last_name: FieldElementProperties;
-  address: FieldElementProperties;
-  city: FieldElementProperties;
-  state: FieldElementProperties;
-  postcode: FieldElementProperties;
-  country: FieldElementProperties;
-  phone_number: FieldElementProperties;
-  notes: FieldElementProperties;
-}
-
-interface IFunnelElementProperties {
-  address: {
-    shipping: IAddressElementsProperties;
-    billing: IAddressElementsProperties;
-  };
-  email: FieldElementProperties;
-  paymentButton: {
-    creditCard: string;
-    paypal: string;
-    applePay: string;
-  };
-}
-
-interface NextAddressFields {
-  country: HTMLInputElement | HTMLSelectElement | null;
-  first_name: HTMLInputElement | null;
-  last_name: HTMLInputElement | null;
-  line1: HTMLInputElement | null;
-  line2: HTMLInputElement | null;
-  line3: HTMLInputElement | null;
-  line4: HTMLInputElement | null;
-  notes: HTMLInputElement | null;
-  phone_number: HTMLInputElement | null;
-  postcode: HTMLInputElement | null;
-  state: HTMLInputElement | HTMLSelectElement | null;
-}
-
-interface IAddressFields {
-  shipping: NextAddressFields;
-  billing: NextAddressFields;
-}
+};
 
 class EcommerceFunnel {
-  private campaignApi: NextCampaignApi;
+  private developing = window.location.hostname === "localhost";
 
   private elementsProperties: IFunnelElementProperties;
 
-  private addressFields: IAddressFields | null;
-  private customerEmailField: HTMLInputElement | null;
+  private validator: JustValidate;
+
+  private campaignApi: NextCampaignApi;
 
   private static DEFAULT_FUNNEL_ELEMENTS_PROPERTIES: IFunnelElementProperties =
-    {
-      address: {
-        shipping: {
-          first_name: {
-            selector: "[data-first-name]",
-            errorMessage: "Invalid shipping first name",
-          },
-          last_name: {
-            selector: "[data-last-name]",
-            errorMessage: "Invalid shipping last name",
-          },
-          address: {
-            selector: "[data-address]",
-            errorMessage: "Invalid shipping address",
-          },
-          city: {
-            selector: "[data-city]",
-            errorMessage: "Invalid shipping city",
-          },
-          state: {
-            selector: "[data-state]",
-            errorMessage: "Invalid shipping state",
-          },
-          postcode: {
-            selector: "[data-zip]",
-            errorMessage: "Invalid shipping zip",
-          },
-          country: {
-            selector: "[data-country]",
-            errorMessage: "Invalid shipping country",
-          },
-          phone_number: {
-            selector: "[data-phone]",
-            errorMessage: "Invalid shipping phone",
-          },
-          notes: {
-            selector: "[data-notes]",
-            errorMessage: "Invalid shipping notes",
-          },
-        },
-        billing: {
-          first_name: {
-            selector: "[data-billing-first-name]",
-            errorMessage: "Invalid shipping first name",
-          },
-          last_name: {
-            selector: "[data-billing-last-name]",
-            errorMessage: "Invalid shipping last name",
-          },
-          address: {
-            selector: "[data-billing-address]",
-            errorMessage: "Invalid shipping address",
-          },
-          city: {
-            selector: "[data-billing-city]",
-            errorMessage: "Invalid shipping city",
-          },
-          state: {
-            selector: "[data-billing-state]",
-            errorMessage: "Invalid shipping state",
-          },
-          postcode: {
-            selector: "[data-billing-zip]",
-            errorMessage: "Invalid shipping zip",
-          },
-          country: {
-            selector: "[data-billing-country]",
-            errorMessage: "Invalid shipping country",
-          },
-          phone_number: {
-            selector: "[data-billing-phone]",
-            errorMessage: "Invalid shipping phone",
-          },
-          notes: {
-            selector: "[data-billing-notes]",
-            errorMessage: "Invalid shipping notes",
-          },
-        },
-      },
-      email: {
-        selector: "[data-email]",
-        errorMessage: "Invalid email",
-      },
-      paymentButton: {
-        creditCard: "[data-credit-card-btn]",
-        paypal: "[data-paypal-btn]",
-        applePay: "[data-apple-pay-btn]",
-      },
-    };
+    defaultFunnelElementsProps;
 
   /**
-   * @description Pass query selectors of the funnel fields and the fields validation
+   * @description EcommerceFunnel is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
+   * @param campaignApi - An instance of `NextCampaignApi` class to handle the API requests
+   * @param elementsCustomProperties - Custom properties to override the default properties of the funnel elements
    */
   constructor(
     campaignApi: NextCampaignApi,
@@ -167,88 +42,240 @@ class EcommerceFunnel {
       elementsCustomProperties
     );
 
-    const { shipping, billing } = this.elementsProperties.address;
-    this.addressFields = {
-      shipping: this.getPageFields(shipping),
-      billing: this.getPageFields(billing),
-    };
+    this.validator = new JustValidate(
+      this.elementsProperties.pageFieldsForm.selector
+    );
+    this.validator.onFail((fields) => {
+      if (this.developing) {
+        console.log("just-validate onFail fields:", fields);
+      }
+    });
+    this.validator.onSuccess(() => {
+      this.storeInSessionPageValidFieldsValues();
+    });
 
-    this.customerEmailField = document.querySelector(
-      this.elementsProperties.email.selector
+    this.setPageRequiredFieldsForValidation();
+  }
+
+  private mergeCustomPropertiesWithDefault(
+    customProperties: DeepPartial<IFunnelElementProperties>
+  ): IFunnelElementProperties {
+    return _.merge(
+      {},
+      EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES,
+      customProperties
     );
   }
 
-  getPageFields(
-    fields: IAddressElementsProperties
-  ): NextAddressFields {
-    const $$ = document.querySelector.bind(document);
+  getPageRequiredFieldsProps(): Array<IFieldElementProperties> {
+    const { shipping, billing } = this.elementsProperties.fields.address;
 
-    return {
-      country: $$(fields.country.selector) as
-        | HTMLInputElement
-        | HTMLSelectElement,
-      first_name: $$(fields.first_name.selector) as HTMLInputElement,
-      last_name: $$(fields.last_name.selector) as HTMLInputElement,
-      line1: $$(fields.address.selector) as HTMLInputElement,
-      line2: $$(fields.address.selector) as HTMLInputElement,
-      line3: $$(fields.address.selector) as HTMLInputElement,
-      line4: $$(fields.city.selector) as HTMLInputElement,
-      notes: $$(fields.notes.selector) as HTMLInputElement,
-      phone_number: $$(fields.phone_number.selector) as HTMLInputElement,
-      postcode: $$(fields.postcode.selector) as HTMLInputElement,
-      state: $$(fields.state.selector) as HTMLInputElement | HTMLSelectElement,
-    };
+    const shippingFieldsProperties = Object.values(shipping);
+    const billingFieldsProperties = Object.values(billing);
+
+    return [
+      ...shippingFieldsProperties,
+      ...billingFieldsProperties,
+      this.elementsProperties.fields.email,
+    ];
   }
 
-  mergeCustomPropertiesWithDefault(
-    customProperties: DeepPartial<IFunnelElementProperties>
-  ): IFunnelElementProperties {
-    return _.merge({}, EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES, customProperties);
-  }
+  private setPageRequiredFieldsForValidation(): void {
+    const pageFieldsToValidate = this.getPageRequiredFieldsProps();
 
-  private initializeSaveLeadEventListeners() {
-    if (
-      this.addressFields &&
-      this.customerEmailField &&
-      this.addressFields.shipping.first_name &&
-      this.addressFields.shipping.last_name &&
-      this.addressFields.shipping.phone_number
-    ) {
-    }
-  }
-
-  getPageRequiredFields(): Array<HTMLInputElement | HTMLSelectElement> {
-    const allPossibleFields = [];
-
-    if (this.addressFields) {
-      const shippingFields = Object.values(this.addressFields.shipping);
-      const billingFields = Object.values(this.addressFields.billing);
-      allPossibleFields.push(...shippingFields, ...billingFields);
-    }
-
-    if (this.customerEmailField) {
-      allPossibleFields.push(this.customerEmailField);
-    }
-
-    const requiredFields = allPossibleFields.filter((field) => {
-      if (field !== null) {
-        return field.required;
+    pageFieldsToValidate.forEach((field) => {
+      try {
+        if (
+          document.querySelector(field.selector) !== null &&
+          field.requireValidation
+        ) {
+          this.validator.addField(field.selector, field.validationRules!);
+        }
+      } catch (error) {
+        console.error(
+          `Error while adding field ${field.selector} to the validator`,
+          error
+        );
       }
     });
-
-    return requiredFields;
   }
 
-  storePageValidFieldsValue() {}
+  getPageFieldsValues() {
+    const $$ = document.querySelector.bind(document);
 
-  /**
-   * @description Validate the present `required` fields of the page that match with the ones passed during initialization of this class
-   */
-  validatePageRequiredFields() {}
+    const { shipping, billing } = this.elementsProperties.fields.address;
 
-  createOrder() {
-    const validFields = sessionStorage.getItem("validFields");
+    const pageFieldsValues = {
+      shipping: {
+        country:
+          (
+            $$(shipping.country.selector) as
+              | HTMLInputElement
+              | HTMLSelectElement
+          )?.value || undefined,
+        first_name:
+          ($$(shipping.first_name.selector) as HTMLInputElement)?.value ||
+          undefined,
+        last_name:
+          ($$(shipping.last_name.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line1:
+          ($$(shipping.address.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line2:
+          ($$(shipping.address_line_2.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line3:
+          ($$(shipping.address_line_3.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line4:
+          ($$(shipping.city.selector) as HTMLInputElement)?.value || undefined,
+        notes:
+          ($$(shipping.notes.selector) as HTMLInputElement)?.value || undefined,
+        phone_number:
+          ($$(shipping.phone_number.selector) as HTMLInputElement)?.value ||
+          undefined,
+        postcode:
+          ($$(shipping.postcode.selector) as HTMLInputElement)?.value ||
+          undefined,
+        state:
+          ($$(shipping.state.selector) as HTMLInputElement | HTMLSelectElement)
+            ?.value || undefined,
+      },
+      billing: {
+        country:
+          ($$(billing.country.selector) as HTMLInputElement | HTMLSelectElement)
+            ?.value || undefined,
+        first_name:
+          ($$(billing.first_name.selector) as HTMLInputElement)?.value ||
+          undefined,
+        last_name:
+          ($$(billing.last_name.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line1:
+          ($$(billing.address.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line2:
+          ($$(billing.address_line_2.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line3:
+          ($$(billing.address_line_3.selector) as HTMLInputElement)?.value ||
+          undefined,
+        line4:
+          ($$(billing.city.selector) as HTMLInputElement)?.value || undefined,
+        notes:
+          ($$(billing.notes.selector) as HTMLInputElement)?.value || undefined,
+        phone_number:
+          ($$(billing.phone_number.selector) as HTMLInputElement)?.value ||
+          undefined,
+        postcode:
+          ($$(billing.postcode.selector) as HTMLInputElement)?.value ||
+          undefined,
+        state:
+          ($$(billing.state.selector) as HTMLInputElement | HTMLSelectElement)
+            ?.value || undefined,
+      },
+      email:
+        ($$(this.elementsProperties.fields.email.selector) as HTMLInputElement)
+          ?.value || undefined,
+    };
+
+    for (const field in pageFieldsValues.shipping) {
+      const key = field as keyof typeof pageFieldsValues.shipping;
+      if (
+        pageFieldsValues.shipping[key] === undefined
+      ) {
+        delete pageFieldsValues.shipping[key];
+      }
+    }
+
+    for (const field in pageFieldsValues.billing) {
+      const key = field as keyof typeof pageFieldsValues.billing;
+      if (
+        pageFieldsValues.billing[key] === undefined
+      ) {
+        delete pageFieldsValues.billing[key];
+      }
+    }
+
+    if (pageFieldsValues.email === undefined) {
+      delete pageFieldsValues.email;
+    }
+
+    return pageFieldsValues;
   }
+
+  private storeInSessionPageValidFieldsValues() {
+    const storagedFieldsData = sessionStorage.getItem("validFieldsValues");
+    let validFieldsValues = {};
+
+    if (storagedFieldsData) {
+      validFieldsValues = JSON.parse(storagedFieldsData);
+    }
+
+    validFieldsValues = { ...this.getPageFieldsValues() };
+
+    sessionStorage.setItem(
+      "validFieldsValues",
+      JSON.stringify(validFieldsValues)
+    );
+  }
+
+  // getAttributionData() {}
+
+  // async ordersCreate(body: ParamOrdersCreate): Promise<void> {
+  //   const $$ = document.querySelector.bind(document);
+
+  //   const fieldsValues = sessionStorage.getItem("validFieldsValues");
+  //   if (fieldsValues === null) {
+  //     throw new Error(
+  //       "No fields values found in sessionStorage, please call storeInSessionPageValidFieldsValues before calling ordersCreate"
+  //     );
+  //   }
+  //   const { shipping, billing, email } = JSON.parse(fieldsValues);
+
+  //   const {
+  //     billing_same_as_shipping_address,
+  //     use_default_billing_address,
+  //     use_default_shipping_address,
+  //   } = this.elementsProperties.checkout;
+
+  //   const bodyData: RequestOrdersCreate = {
+  //     attribution: this.getAttributionData(),
+  //     billing_address: billing,
+  //     billing_same_as_shipping_address:
+  //       ($$(billing_same_as_shipping_address.selector) as HTMLInputElement)
+  //         ?.checked || billing_same_as_shipping_address.defaultValue,
+  //     lines: [],
+  //     payment_detail: {
+  //       payment_method: "card_token",
+  //       card_token: "test_card",
+  //     },
+  //     // payment_failed_url: body.payment_failed_url,
+  //     shipping_address: shipping,
+  //     shipping_method: body.shipping_method,
+  //     success_url: body.next_page_url,
+  //     use_default_billing_address:
+  //       ($$(use_default_billing_address.selector) as HTMLInputElement)
+  //         ?.checked || use_default_billing_address.defaultValue,
+  //     use_default_shipping_address:
+  //       ($$(use_default_shipping_address.selector) as HTMLInputElement)
+  //         ?.checked || use_default_shipping_address.defaultValue,
+  //     user: {
+  //       first_name: shipping.first_name,
+  //       last_name: shipping.last_name,
+  //       email,
+  //       phone_number: shipping.phone_number,
+  //       language: "en",
+  //     },
+  //   }
+
+  //   if (body.vouchers) {
+  //     bodyData.vouchers = body.vouchers;
+  //   }
+
+  //   await this.campaignApi.ordersCreate(bodyData);
+  // }
 }
 
 export default EcommerceFunnel;
