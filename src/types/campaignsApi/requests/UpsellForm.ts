@@ -7,5 +7,5 @@ export interface PaymentDetail {
 
 export default interface OrdersUpsellCreate {
   lines: Array<Omit<CartLine, "is_upsell">>;
-  payment_detail: PaymentDetail;
+  payment_detail?: PaymentDetail;
 }

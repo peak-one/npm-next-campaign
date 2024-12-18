@@ -5,7 +5,7 @@ function fixCurrentUrlExtraSlashs() {
 /**
  * 
  * @param nextURL given the nextURL, it returns the next URL keeping the subpath
- * @example getNextUrlKeepingSubPath("/upsell1") // returns "https://example.com/v1/upsell1" keeping the subpath "/v1", if there is not subpath it will return "https://example.com/upsell1"
+ * @example getNextUrlKeepingSubPath("/upsell1") // returns "https://example.com/v1/upsell1" keeping the subpath "/v1", if there is no subpath it will return "https://example.com/upsell1"
  */
 function getNextUrlKeepingSubPath(nextURL: string) {
   const pathNoExtraSlashs = fixCurrentUrlExtraSlashs().split('/');

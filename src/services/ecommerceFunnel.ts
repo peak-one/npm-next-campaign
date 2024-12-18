@@ -9,10 +9,12 @@ import {
 
 import defaultFunnelElementsProps from "../configs/services/defaultFunnelElementsProps";
 import ParamOrdersCreate from "../types/services/ParamOrdersCreate";
+import ParamUpsellCreate from "../types/services/ParamUpsellCreate";
 import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
 
 import getAttributionData from "../utils/getAttributionData";
 import getNextUrlKeepingSubPath from "../utils/getNextUrlKeepingSubPath";
+import Order from "../types/campaignsApi/responses/Order";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
@@ -222,6 +224,16 @@ class EcommerceFunnel {
     );
   }
 
+  // -------------------------------- API methods --------------------------------
+  async saveLead(body: any): Promise<void> {
+    // NEEDS TO BE IMPLEMENTED
+    const result = await this.campaignApi.cartsCreate(body);
+
+    if (this.developing) {
+      console.log(`saveLead result: ${result}`);
+    }
+  }
+
   async ordersCreate(body: ParamOrdersCreate): Promise<void> {
     const $$ = document.querySelector.bind(document);
 
@@ -252,7 +264,7 @@ class EcommerceFunnel {
       // payment_failed_url: body.payment_failed_url,
       shipping_address: shipping,
       shipping_method: body.shipping_method,
-      success_url: getNextUrlKeepingSubPath(body.next_page_url),
+      success_url: getNextUrlKeepingSubPath(body.next_page),
       use_default_billing_address:
         ($$(use_default_billing_address.selector) as HTMLInputElement)
           ?.checked || use_default_billing_address.defaultValue,
@@ -286,10 +298,41 @@ class EcommerceFunnel {
     if (!result.payment_complete_url && result.number && result.ref_id) {
       sessionStorage.setItem("order_ref_id", result.ref_id);
       sessionStorage.setItem("order_number", result.number);
-      window.location.href = getNextUrlKeepingSubPath(body.next_page_url);
+      window.location.href = getNextUrlKeepingSubPath(body.next_page);
     } else if (result.payment_complete_url) {
       window.location.href = result.payment_complete_url;
     }
+  }
+
+  async upsellCreate(body: ParamUpsellCreate): Promise<void> {
+    // IS THIS ENOUGHT? COMMENT TO REMIND ME IF THIS IS REALLY ENOUGH (NEED TO TEST)
+    const orderRefId = sessionStorage.getItem("order_ref_id");
+    if (orderRefId === null) {
+      throw new Error(
+        "No order reference ID found in sessionStorage, please call ordersCreate before calling upsellCreate"
+      );
+    }
+
+    const result = await this.campaignApi.ordersUpsellCreate(orderRefId, body);
+
+    if (this.developing) {
+      console.log(`upsellCreate result: ${result}`);
+    }
+
+    if (result.payment_complete_url) {
+      window.location.href = getNextUrlKeepingSubPath(body.next_page);
+    }
+  }
+
+  async orderRetrieve(orderRefId: string): Promise<Partial<Order>> {
+    // IS THIS ENOUGHT? COMMENT TO REMIND ME IF THIS IS REALLY ENOUGH (NEED TO TEST)
+    const result = await this.campaignApi.orderRetrieve(orderRefId);
+
+    if (this.developing) {
+      console.log(`orderRetrieve result: ${result}`);
+    }
+
+    return result;
   }
 }
 
