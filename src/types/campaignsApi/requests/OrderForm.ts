@@ -24,7 +24,7 @@ interface PaymentDetail {
 
 export default interface OrdersCreate {
   attribution?: Attribution;
-  billing_address: RequestAddress;
+  billing_address?: RequestAddress;
   billing_same_as_shipping_address?: boolean;
   lines: Array<CartLine>;
   payment_detail: PaymentDetail;

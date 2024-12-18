@@ -58,11 +58,11 @@ const defaultFunnelElementsProps: IFunnelElementProperties = {
           ],
         },
         address_line_2: {
-          selector: "[data-billing-address-line-2]",
+          selector: "[data-shipping-address-line-2]",
           requireValidation: false,
         },
         address_line_3: {
-          selector: "[data-billing-address-line-3]",
+          selector: "[data-shipping-address-line-3]",
           requireValidation: false,
         },
         city: {

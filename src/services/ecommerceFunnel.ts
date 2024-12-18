@@ -1,6 +1,6 @@
 import NextCampaignApi from "../api/nextCampaignApi";
 import _ from "lodash";
-import JustValidate, { FieldInterface } from "just-validate";
+import JustValidate from "just-validate";
 
 import {
   IFunnelElementProperties,
@@ -10,6 +10,9 @@ import {
 import defaultFunnelElementsProps from "../configs/services/defaultFunnelElementsProps";
 import ParamOrdersCreate from "../types/services/ParamOrdersCreate";
 import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
+
+import getAttributionData from "../utils/getAttributionData";
+import getNextUrlKeepingSubPath from "../utils/getNextUrlKeepingSubPath";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
@@ -47,7 +50,7 @@ class EcommerceFunnel {
     );
     this.validator.onFail((fields) => {
       if (this.developing) {
-        console.log("just-validate onFail fields:", fields);
+        console.log(`just-validate onFail fields: ${fields}`);
       }
     });
     this.validator.onSuccess(() => {
@@ -182,18 +185,14 @@ class EcommerceFunnel {
 
     for (const field in pageFieldsValues.shipping) {
       const key = field as keyof typeof pageFieldsValues.shipping;
-      if (
-        pageFieldsValues.shipping[key] === undefined
-      ) {
+      if (pageFieldsValues.shipping[key] === undefined) {
         delete pageFieldsValues.shipping[key];
       }
     }
 
     for (const field in pageFieldsValues.billing) {
       const key = field as keyof typeof pageFieldsValues.billing;
-      if (
-        pageFieldsValues.billing[key] === undefined
-      ) {
+      if (pageFieldsValues.billing[key] === undefined) {
         delete pageFieldsValues.billing[key];
       }
     }
@@ -210,10 +209,12 @@ class EcommerceFunnel {
     let validFieldsValues = {};
 
     if (storagedFieldsData) {
-      validFieldsValues = JSON.parse(storagedFieldsData);
+      validFieldsValues = storagedFieldsData
+        ? JSON.parse(storagedFieldsData)
+        : {};
     }
 
-    validFieldsValues = { ...this.getPageFieldsValues() };
+    validFieldsValues = { ...validFieldsValues, ...this.getPageFieldsValues() };
 
     sessionStorage.setItem(
       "validFieldsValues",
@@ -221,61 +222,75 @@ class EcommerceFunnel {
     );
   }
 
-  // getAttributionData() {}
+  async ordersCreate(body: ParamOrdersCreate): Promise<void> {
+    const $$ = document.querySelector.bind(document);
 
-  // async ordersCreate(body: ParamOrdersCreate): Promise<void> {
-  //   const $$ = document.querySelector.bind(document);
+    const fieldsValues = sessionStorage.getItem("validFieldsValues");
+    if (fieldsValues === null) {
+      throw new Error(
+        "No fields values found in sessionStorage, please call storeInSessionPageValidFieldsValues before calling ordersCreate"
+      );
+    }
+    const { shipping, billing, email } = JSON.parse(fieldsValues);
 
-  //   const fieldsValues = sessionStorage.getItem("validFieldsValues");
-  //   if (fieldsValues === null) {
-  //     throw new Error(
-  //       "No fields values found in sessionStorage, please call storeInSessionPageValidFieldsValues before calling ordersCreate"
-  //     );
-  //   }
-  //   const { shipping, billing, email } = JSON.parse(fieldsValues);
+    const {
+      billing_same_as_shipping_address,
+      use_default_billing_address,
+      use_default_shipping_address,
+    } = this.elementsProperties.checkout;
 
-  //   const {
-  //     billing_same_as_shipping_address,
-  //     use_default_billing_address,
-  //     use_default_shipping_address,
-  //   } = this.elementsProperties.checkout;
+    const bodyData: RequestOrdersCreate = {
+      attribution: getAttributionData(),
+      billing_same_as_shipping_address:
+        ($$(billing_same_as_shipping_address.selector) as HTMLInputElement)
+          ?.checked || billing_same_as_shipping_address.defaultValue,
+      lines: body.lines,
+      payment_detail: {
+        payment_method: "card_token",
+        card_token: body.card_token,
+      },
+      // payment_failed_url: body.payment_failed_url,
+      shipping_address: shipping,
+      shipping_method: body.shipping_method,
+      success_url: getNextUrlKeepingSubPath(body.next_page_url),
+      use_default_billing_address:
+        ($$(use_default_billing_address.selector) as HTMLInputElement)
+          ?.checked || use_default_billing_address.defaultValue,
+      use_default_shipping_address:
+        ($$(use_default_shipping_address.selector) as HTMLInputElement)
+          ?.checked || use_default_shipping_address.defaultValue,
+      user: {
+        first_name: shipping.first_name,
+        last_name: shipping.last_name,
+        email,
+        phone_number: shipping.phone_number,
+        language: "en",
+      },
+    };
 
-  //   const bodyData: RequestOrdersCreate = {
-  //     attribution: this.getAttributionData(),
-  //     billing_address: billing,
-  //     billing_same_as_shipping_address:
-  //       ($$(billing_same_as_shipping_address.selector) as HTMLInputElement)
-  //         ?.checked || billing_same_as_shipping_address.defaultValue,
-  //     lines: [],
-  //     payment_detail: {
-  //       payment_method: "card_token",
-  //       card_token: "test_card",
-  //     },
-  //     // payment_failed_url: body.payment_failed_url,
-  //     shipping_address: shipping,
-  //     shipping_method: body.shipping_method,
-  //     success_url: body.next_page_url,
-  //     use_default_billing_address:
-  //       ($$(use_default_billing_address.selector) as HTMLInputElement)
-  //         ?.checked || use_default_billing_address.defaultValue,
-  //     use_default_shipping_address:
-  //       ($$(use_default_shipping_address.selector) as HTMLInputElement)
-  //         ?.checked || use_default_shipping_address.defaultValue,
-  //     user: {
-  //       first_name: shipping.first_name,
-  //       last_name: shipping.last_name,
-  //       email,
-  //       phone_number: shipping.phone_number,
-  //       language: "en",
-  //     },
-  //   }
+    if (billing) {
+      bodyData.billing_same_as_shipping_address = false;
+      bodyData.billing_address = billing;
+    }
 
-  //   if (body.vouchers) {
-  //     bodyData.vouchers = body.vouchers;
-  //   }
+    if (body.vouchers) {
+      bodyData.vouchers = body.vouchers;
+    }
 
-  //   await this.campaignApi.ordersCreate(bodyData);
-  // }
+    const result = await this.campaignApi.ordersCreate(bodyData);
+
+    if (this.developing) {
+      console.log(`ordersCreate result: ${result}`);
+    }
+
+    if (!result.payment_complete_url && result.number && result.ref_id) {
+      sessionStorage.setItem("order_ref_id", result.ref_id);
+      sessionStorage.setItem("order_number", result.number);
+      window.location.href = getNextUrlKeepingSubPath(body.next_page_url);
+    } else if (result.payment_complete_url) {
+      window.location.href = result.payment_complete_url;
+    }
+  }
 }
 
 export default EcommerceFunnel;

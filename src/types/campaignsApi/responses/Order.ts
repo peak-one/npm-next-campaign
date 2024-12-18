@@ -14,6 +14,7 @@ export default interface Order {
   lines: Array<Partial<LinesPackage>>;
   number: string;
   order_status_url: string;
+  payment_complete_url: string;
   ref_id: string;
   shipping_address: Partial<Address>;
   shipping_code: string;
