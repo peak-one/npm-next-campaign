@@ -251,11 +251,19 @@ class EcommerceFunnel {
       use_default_shipping_address,
     } = this.elementsProperties.checkout;
 
+    const billSameShipPageValue = (
+      $$(billing_same_as_shipping_address.selector) as HTMLInputElement
+    )?.checked;
+    const billSameShipSessionStoragedValue =
+      JSON.parse(sessionStorage.getItem("billing_same_as_shipping_address") || "false");
+    const billSameShip =
+      billSameShipSessionStoragedValue ??
+      billSameShipPageValue ??
+      billing_same_as_shipping_address.defaultValue;
+
     const bodyData: RequestOrdersCreate = {
       attribution: getAttributionData(),
-      billing_same_as_shipping_address:
-        ($$(billing_same_as_shipping_address.selector) as HTMLInputElement)
-          ?.checked || billing_same_as_shipping_address.defaultValue,
+      billing_same_as_shipping_address: billSameShip,
       lines: body.lines,
       payment_detail: {
         payment_method: "card_token",
@@ -267,10 +275,10 @@ class EcommerceFunnel {
       success_url: getNextUrlKeepingSubPath(body.next_page),
       use_default_billing_address:
         ($$(use_default_billing_address.selector) as HTMLInputElement)
-          ?.checked || use_default_billing_address.defaultValue,
+          ?.checked ?? use_default_billing_address.defaultValue,
       use_default_shipping_address:
         ($$(use_default_shipping_address.selector) as HTMLInputElement)
-          ?.checked || use_default_shipping_address.defaultValue,
+          ?.checked ?? use_default_shipping_address.defaultValue,
       user: {
         first_name: shipping.first_name,
         last_name: shipping.last_name,
@@ -280,7 +288,7 @@ class EcommerceFunnel {
       },
     };
 
-    if (billing) {
+    if (billSameShip === false) {
       bodyData.billing_same_as_shipping_address = false;
       bodyData.billing_address = billing;
     }
