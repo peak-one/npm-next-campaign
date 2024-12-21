@@ -5,6 +5,7 @@ import JustValidate from "just-validate";
 import {
   IFunnelElementProperties,
   IFieldElementProperties,
+  IFunnelCallbacks
 } from "../types/services/ecommerceFunnel";
 
 import defaultFunnelElementsProps from "../configs/services/defaultFunnelElementsProps";
@@ -20,8 +21,15 @@ type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
+declare global {
+  interface Window {
+    ordersCreate: (body: ParamOrdersCreate) => Promise<void>;
+    upsellCreate: (body: ParamUpsellCreate) => Promise<void>;
+  }
+}
+
 class EcommerceFunnel {
-  private developing = window.location.hostname === "localhost";
+  private developing: boolean;
 
   private elementsProperties: IFunnelElementProperties;
 
@@ -39,8 +47,17 @@ class EcommerceFunnel {
    */
   constructor(
     campaignApi: NextCampaignApi,
-    elementsCustomProperties: DeepPartial<IFunnelElementProperties> = {}
+    funnelCallbacks: IFunnelCallbacks,
+    elementsCustomProperties: DeepPartial<IFunnelElementProperties> = {},
+    showDevLogs: boolean = false
   ) {
+    if (window.location.hostname === "localhost" && !showDevLogs) {
+      console.log(
+        "EcommerceFunnel: Heey dev! If you want to see more logs, set the parameter showDevLogs to true!"
+      );
+    }
+    this.developing = showDevLogs;
+
     this.campaignApi = campaignApi;
 
     this.elementsProperties = this.mergeCustomPropertiesWithDefault(
@@ -52,14 +69,19 @@ class EcommerceFunnel {
     );
     this.validator.onFail((fields) => {
       if (this.developing) {
-        console.log(`just-validate onFail fields: ${fields}`);
+        console.log(`just-validate onFail fields:`, fields);
       }
     });
     this.validator.onSuccess(() => {
       this.storeInSessionPageValidFieldsValues();
+      funnelCallbacks.onValidationSuccess();
     });
 
     this.setPageRequiredFieldsForValidation();
+    this.addActionBillingSameShippingCheckbox();
+
+    window.ordersCreate = this.ordersCreate.bind(this);
+    window.upsellCreate = this.upsellCreate.bind(this);
   }
 
   private mergeCustomPropertiesWithDefault(
@@ -76,13 +98,24 @@ class EcommerceFunnel {
     const { shipping, billing } = this.elementsProperties.fields.address;
 
     const shippingFieldsProperties = Object.values(shipping);
-    const billingFieldsProperties = Object.values(billing);
 
-    return [
+    const pageRequiredFieldsProps = [
       ...shippingFieldsProperties,
-      ...billingFieldsProperties,
       this.elementsProperties.fields.email,
     ];
+
+    if (this.billingSameAsShippingAddress() === false) {
+      if (this.developing) {
+        console.log(
+          `getPageRequiredFieldsProps method: Getting billing fields properties`
+        );
+      }
+
+      const billingFieldsProperties = Object.values(billing);
+      pageRequiredFieldsProps.push(...billingFieldsProperties);
+    }
+
+    return pageRequiredFieldsProps;
   }
 
   private setPageRequiredFieldsForValidation(): void {
@@ -90,15 +123,61 @@ class EcommerceFunnel {
 
     pageFieldsToValidate.forEach((field) => {
       try {
-        if (
-          document.querySelector(field.selector) !== null &&
-          field.requireValidation
-        ) {
+        const fieldIsPresent = document.querySelector(field.selector) !== null;
+        if (fieldIsPresent && field.requireValidation) {
           this.validator.addField(field.selector, field.validationRules!);
+        } else if (this.developing) {
+          console.log(
+            `Field selector: ${field.selector} ${
+              fieldIsPresent
+                ? "has found in the page"
+                : "has not found in the page"
+            } and the requireValidation value is = ${field.requireValidation}`
+          );
         }
       } catch (error) {
         console.error(
           `Error while adding field ${field.selector} to the validator`,
+          error
+        );
+      }
+    });
+  }
+
+  private addActionBillingSameShippingCheckbox(): void {
+    const billSameShipElement = document.querySelector(
+      this.elementsProperties.checkout.billing_same_as_shipping_address.selector
+    ) as HTMLInputElement;
+    if (billSameShipElement) {
+      billSameShipElement.addEventListener("change", () => {
+        if (this.developing) {
+          console.log(
+            `billSameShipElement.checked: ${billSameShipElement.checked}`
+          );
+        }
+        if (billSameShipElement.checked === false) {
+          this.setPageRequiredFieldsForValidation();
+        } else {
+          this.removeBillingFieldsValidation();
+        }
+      });
+    }
+  }
+
+  private removeBillingFieldsValidation(): void {
+    const { billing } = this.elementsProperties.fields.address;
+
+    const billingFieldsProperties = Object.values(billing);
+
+    billingFieldsProperties.forEach((field) => {
+      try {
+        const fieldIsPresent = document.querySelector(field.selector) !== null;
+        if (fieldIsPresent && field.requireValidation) {
+          this.validator.removeField(field.selector);
+        }
+      } catch (error) {
+        console.error(
+          `Error while removing field ${field.selector} from the validator`,
           error
         );
       }
@@ -208,20 +287,62 @@ class EcommerceFunnel {
 
   private storeInSessionPageValidFieldsValues() {
     const storagedFieldsData = sessionStorage.getItem("validFieldsValues");
-    let validFieldsValues = {};
+    let validFieldsValues = storagedFieldsData
+      ? JSON.parse(storagedFieldsData)
+      : {};
 
-    if (storagedFieldsData) {
-      validFieldsValues = storagedFieldsData
-        ? JSON.parse(storagedFieldsData)
-        : {};
+    const pageFieldsValues = this.getPageFieldsValues();
+
+    validFieldsValues = {
+      ...validFieldsValues,
+      ...pageFieldsValues,
+
+      shipping: {
+        ...validFieldsValues.shipping,
+        ...pageFieldsValues.shipping,
+      },
+
+      billing: {
+        ...validFieldsValues.billing,
+        ...pageFieldsValues.billing,
+      },
+    };
+
+    if (this.developing) {
+      console.log(
+        `storeInSessionPageValidFieldsValues method storaged:`,
+        validFieldsValues
+      );
     }
-
-    validFieldsValues = { ...validFieldsValues, ...this.getPageFieldsValues() };
 
     sessionStorage.setItem(
       "validFieldsValues",
       JSON.stringify(validFieldsValues)
     );
+  }
+
+  private billingSameAsShippingAddress(): boolean {
+    const { selector, defaultValue } =
+      this.elementsProperties.checkout.billing_same_as_shipping_address;
+
+    const billSameShipPageValue = (
+      document.querySelector(selector) as HTMLInputElement
+    )?.checked;
+
+    const billSameShipSessionStoragedValue = JSON.parse(
+      sessionStorage.getItem("billing_same_as_shipping_address") || "false"
+    );
+
+    const billSameShip =
+      billSameShipPageValue ?? billSameShipSessionStoragedValue ?? defaultValue;
+
+    if (this.developing) {
+      console.log(
+        `billingSameAsShippingAddress method returned: ${billSameShip}`
+      );
+    }
+
+    return billSameShip;
   }
 
   // -------------------------------- API methods --------------------------------
@@ -230,7 +351,7 @@ class EcommerceFunnel {
     const result = await this.campaignApi.cartsCreate(body);
 
     if (this.developing) {
-      console.log(`saveLead result: ${result}`);
+      console.log(`saveLead method result:`, result);
     }
   }
 
@@ -245,21 +366,10 @@ class EcommerceFunnel {
     }
     const { shipping, billing, email } = JSON.parse(fieldsValues);
 
-    const {
-      billing_same_as_shipping_address,
-      use_default_billing_address,
-      use_default_shipping_address,
-    } = this.elementsProperties.checkout;
+    const { use_default_billing_address, use_default_shipping_address } =
+      this.elementsProperties.checkout;
 
-    const billSameShipPageValue = (
-      $$(billing_same_as_shipping_address.selector) as HTMLInputElement
-    )?.checked;
-    const billSameShipSessionStoragedValue =
-      JSON.parse(sessionStorage.getItem("billing_same_as_shipping_address") || "false");
-    const billSameShip =
-      billSameShipSessionStoragedValue ??
-      billSameShipPageValue ??
-      billing_same_as_shipping_address.defaultValue;
+    const billSameShip = this.billingSameAsShippingAddress();
 
     const bodyData: RequestOrdersCreate = {
       attribution: getAttributionData(),
@@ -297,10 +407,14 @@ class EcommerceFunnel {
       bodyData.vouchers = body.vouchers;
     }
 
+    if (this.developing) {
+      console.log(`ordersCreate method body data:`, bodyData);
+    }
+
     const result = await this.campaignApi.ordersCreate(bodyData);
 
     if (this.developing) {
-      console.log(`ordersCreate result: ${result}`);
+      console.log(`ordersCreate method result:`, result);
     }
 
     if (!result.payment_complete_url && result.number && result.ref_id) {

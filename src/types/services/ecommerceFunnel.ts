@@ -49,3 +49,7 @@ export interface IFunnelElementProperties {
     applePay: string;
   };
 }
+
+export interface IFunnelCallbacks {
+  onValidationSuccess: Function;
+}

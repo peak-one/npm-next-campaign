@@ -11,7 +11,7 @@ const defaultFunnelElementsProps: IFunnelElementProperties = {
         first_name: {
           selector: "[data-first-name]",
           requireValidation: true,
-          validationRules: [
+          validationRules: [  
             {
               rule: Rules.Required,
             },
