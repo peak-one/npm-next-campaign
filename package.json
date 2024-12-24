@@ -1,6 +1,7 @@
 {
   "name": "next-campaign",
   "version": "1.0.0",
+  "private": true,
   "type": "module",
   "exports": {
     "import": "./dist/src/index.js"

@@ -271,11 +271,17 @@ const defaultFunnelElementsProps: IFunnelElementProperties = {
       defaultValue: false
     },
   },
-  paymentButton: {
-    creditCard: "[data-credit-card-btn]",
-    paypal: "[data-paypal-btn]",
-    applePay: "[data-apple-pay-btn]",
+  ordersCreateBtn: {
+    selector: "[data-orders-create-btn]",
   },
+  paymentMethodsElements: {
+    card_token: {
+      selector: "[data-payment-method-card]",
+    },
+    paypal: {
+      selector: "[data-payment-method-paypal]",
+    }
+  }
 };
 
 export default defaultFunnelElementsProps;

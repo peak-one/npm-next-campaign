@@ -1,11 +1,11 @@
 import NextCampaignApi from "../api/nextCampaignApi";
-import _ from "lodash";
 import JustValidate from "just-validate";
+import _ from "lodash";
 
 import {
   IFunnelElementProperties,
   IFieldElementProperties,
-  IFunnelCallbacks
+  IFunnelCallbacks,
 } from "../types/services/ecommerceFunnel";
 
 import defaultFunnelElementsProps from "../configs/services/defaultFunnelElementsProps";
@@ -14,7 +14,6 @@ import ParamUpsellCreate from "../types/services/ParamUpsellCreate";
 import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
 
 import getAttributionData from "../utils/getAttributionData";
-import getNextUrlKeepingSubPath from "../utils/getNextUrlKeepingSubPath";
 import Order from "../types/campaignsApi/responses/Order";
 
 type DeepPartial<T> = {
@@ -79,7 +78,7 @@ class EcommerceFunnel {
 
     this.setPageRequiredFieldsForValidation();
     this.addActionBillingSameShippingCheckbox();
-
+    
     window.ordersCreate = this.ordersCreate.bind(this);
     window.upsellCreate = this.upsellCreate.bind(this);
   }
@@ -98,7 +97,7 @@ class EcommerceFunnel {
     const { shipping, billing } = this.elementsProperties.fields.address;
 
     const shippingFieldsProperties = Object.values(shipping);
-
+    
     const pageRequiredFieldsProps = [
       ...shippingFieldsProperties,
       this.elementsProperties.fields.email,
@@ -156,8 +155,10 @@ class EcommerceFunnel {
           );
         }
         if (billSameShipElement.checked === false) {
+          sessionStorage.setItem("billing_same_as_shipping_address", "false");
           this.setPageRequiredFieldsForValidation();
         } else {
+          sessionStorage.setItem("billing_same_as_shipping_address", "true");
           this.removeBillingFieldsValidation();
         }
       });
@@ -376,13 +377,13 @@ class EcommerceFunnel {
       billing_same_as_shipping_address: billSameShip,
       lines: body.lines,
       payment_detail: {
-        payment_method: "card_token",
+        payment_method: "card_token", 
         card_token: body.card_token,
       },
       // payment_failed_url: body.payment_failed_url,
       shipping_address: shipping,
       shipping_method: body.shipping_method,
-      success_url: getNextUrlKeepingSubPath(body.next_page),
+      success_url: body.next_page,
       use_default_billing_address:
         ($$(use_default_billing_address.selector) as HTMLInputElement)
           ?.checked ?? use_default_billing_address.defaultValue,
@@ -420,7 +421,7 @@ class EcommerceFunnel {
     if (!result.payment_complete_url && result.number && result.ref_id) {
       sessionStorage.setItem("order_ref_id", result.ref_id);
       sessionStorage.setItem("order_number", result.number);
-      window.location.href = getNextUrlKeepingSubPath(body.next_page);
+      window.location.href = body.next_page;
     } else if (result.payment_complete_url) {
       window.location.href = result.payment_complete_url;
     }
@@ -442,7 +443,7 @@ class EcommerceFunnel {
     }
 
     if (result.payment_complete_url) {
-      window.location.href = getNextUrlKeepingSubPath(body.next_page);
+      window.location.href = body.next_page;
     }
   }
 

@@ -1,7 +1,10 @@
 import { FieldRuleInterface } from "just-validate";
 
-export interface IFieldElementProperties {
+interface Selector {
   selector: string;
+}
+
+export interface IFieldElementProperties extends Selector {
   requireValidation: boolean;
   validationRules?: Array<FieldRuleInterface>;
 }
@@ -20,8 +23,7 @@ export interface IAddressElementsProperties {
   notes: IFieldElementProperties;
 }
 
-interface CheckboxElement {
-  selector: string;
+interface CheckboxElement extends Selector {
   defaultValue: boolean;
 }
 
@@ -31,10 +33,22 @@ interface Checkout {
   use_default_shipping_address: CheckboxElement,
 }
 
+interface PaymentMethods {
+  apple_pay?: Selector;
+  card_token: Selector;
+  paypal?: Selector;
+  klarna?: Selector;
+  ideal?: Selector;
+  bancontact?: Selector;
+  giropay?: Selector;
+  google_pay?: Selector;
+  sofort?: Selector;
+  sepa_debit?:Selector;
+  external?: Selector;
+}
+
 export interface IFunnelElementProperties {
-  pageFieldsForm: {
-    selector: string;
-  };
+  pageFieldsForm: Selector;
   fields: {
     address: {
       shipping: IAddressElementsProperties;
@@ -43,11 +57,8 @@ export interface IFunnelElementProperties {
     email: IFieldElementProperties;
   };
   checkout: Checkout
-  paymentButton: {
-    creditCard: string;
-    paypal: string;
-    applePay: string;
-  };
+  ordersCreateBtn: Selector;
+  paymentMethodsElements: PaymentMethods;
 }
 
 export interface IFunnelCallbacks {
