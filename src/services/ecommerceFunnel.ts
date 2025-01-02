@@ -28,6 +28,7 @@ declare global {
 }
 
 class EcommerceFunnel {
+  // -------------------------------- CONFIGS --------------------------------
   private developing: boolean;
 
   private elementsProperties: IFunnelElementProperties;
@@ -77,7 +78,7 @@ class EcommerceFunnel {
     });
 
     this.setPageRequiredFieldsForValidation();
-    this.addActionBillingSameShippingCheckbox();
+    this.bindActionBillingSameShippingCheckbox();
     
     window.ordersCreate = this.ordersCreate.bind(this);
     window.upsellCreate = this.upsellCreate.bind(this);
@@ -92,6 +93,8 @@ class EcommerceFunnel {
       customProperties
     );
   }
+
+  // ----------------------- ADDRESSES FIELDS FUNCTIONS -----------------------
 
   getPageRequiredFieldsProps(): Array<IFieldElementProperties> {
     const { shipping, billing } = this.elementsProperties.fields.address;
@@ -143,7 +146,7 @@ class EcommerceFunnel {
     });
   }
 
-  private addActionBillingSameShippingCheckbox(): void {
+  private bindActionBillingSameShippingCheckbox(): void {
     const billSameShipElement = document.querySelector(
       this.elementsProperties.checkout.billing_same_as_shipping_address.selector
     ) as HTMLInputElement;
@@ -346,7 +349,18 @@ class EcommerceFunnel {
     return billSameShip;
   }
 
-  // -------------------------------- API methods --------------------------------
+  // ----------------------- PAYMENT RELATED FUNCTIONS -----------------------
+
+  private setPaymentMethod() {
+
+  }
+
+  private bindActionPaymentMethodButtons() {
+    
+  }
+
+  
+  // ------------------------------ API methods ------------------------------
   async saveLead(body: any): Promise<void> {
     // NEEDS TO BE IMPLEMENTED
     const result = await this.campaignApi.cartsCreate(body);
@@ -377,7 +391,7 @@ class EcommerceFunnel {
       billing_same_as_shipping_address: billSameShip,
       lines: body.lines,
       payment_detail: {
-        payment_method: "card_token", 
+        payment_method: "card_token",
         card_token: body.card_token,
       },
       // payment_failed_url: body.payment_failed_url,

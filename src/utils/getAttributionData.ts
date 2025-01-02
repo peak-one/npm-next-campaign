@@ -29,12 +29,12 @@ function getAttributionData() {
     metadata: {
       device,
       domain,
-      fb_event_source_url: location.href,
     },
   };
 
   if (fb_fbp) {
     attributionData.metadata.fb_fbp = fb_fbp;
+    attributionData.metadata.fb_event_source_url = location.href;
   }
 
   if (fb_fbc) {
