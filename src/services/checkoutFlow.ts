@@ -3,57 +3,48 @@ import JustValidate from "just-validate";
 import _ from "lodash";
 
 import {
-  IFunnelElementProperties,
+  ICheckoutElementProperties,
   IFieldElementProperties,
-  IFunnelCallbacks,
-} from "../types/services/ecommerceFunnel";
+} from "../types/services/checkoutFlow";
 
-import defaultFunnelElementsProps from "../configs/services/defaultFunnelElementsProps";
-import ParamOrdersCreate from "../types/services/ParamOrdersCreate";
-import ParamUpsellCreate from "../types/services/ParamUpsellCreate";
+import defaultCheckoutElementsProps from "../configs/services/defaultCheckoutElementsProps";
 import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
 
 import getAttributionData from "../utils/getAttributionData";
-import Order from "../types/campaignsApi/responses/Order";
+import { CartLine } from "../types/campaignsApi/base/CartLine";
+import getNextUrl from "../utils/getNextUrl";
+import SpreedlyIframe from "./spreedlyIframe";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
 
-declare global {
-  interface Window {
-    ordersCreate: (body: ParamOrdersCreate) => Promise<void>;
-    upsellCreate: (body: ParamUpsellCreate) => Promise<void>;
-  }
-}
-
-class EcommerceFunnel {
+class CheckoutFlow {
   // -------------------------------- CONFIGS --------------------------------
   private developing: boolean;
 
-  private elementsProperties: IFunnelElementProperties;
+  private elementsProperties: ICheckoutElementProperties;
 
   private validator: JustValidate;
 
   private campaignApi: NextCampaignApi;
 
-  private static DEFAULT_FUNNEL_ELEMENTS_PROPERTIES: IFunnelElementProperties =
-    defaultFunnelElementsProps;
+  private static DEFAULT_CHECKOUT_ELEMENTS_PROPERTIES: ICheckoutElementProperties =
+    defaultCheckoutElementsProps;
 
   /**
-   * @description EcommerceFunnel is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
+   * @description CheckoutFlow is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
    * @param campaignApi - An instance of `NextCampaignApi` class to handle the API requests
    * @param elementsCustomProperties - Custom properties to override the default properties of the funnel elements
    */
   constructor(
     campaignApi: NextCampaignApi,
-    funnelCallbacks: IFunnelCallbacks,
-    elementsCustomProperties: DeepPartial<IFunnelElementProperties> = {},
+    elementsCustomProperties: DeepPartial<ICheckoutElementProperties> = {},
     showDevLogs: boolean = false
   ) {
     if (window.location.hostname === "localhost" && !showDevLogs) {
       console.log(
-        "EcommerceFunnel: Heey dev! If you want to see more logs, set the parameter showDevLogs to true!"
+        "CheckoutFlow: Heey dev! If you want to see more logs, set the parameter showDevLogs to true!"
       );
     }
     this.developing = showDevLogs;
@@ -74,22 +65,27 @@ class EcommerceFunnel {
     });
     this.validator.onSuccess(() => {
       this.storeInSessionPageValidFieldsValues();
-      funnelCallbacks.onValidationSuccess();
+
+      const spreedlyCardMachine = (window as any).Spreedly;
+      const isCheckoutPage = spreedlyCardMachine !== undefined;
+      if (isCheckoutPage) {
+        this.switchOrdersCreateMethod();
+      } else {
+        window.location.href = getNextUrl();
+      }
     });
 
     this.setPageRequiredFieldsForValidation();
-    this.bindActionBillingSameShippingCheckbox();
-    
-    window.ordersCreate = this.ordersCreate.bind(this);
-    window.upsellCreate = this.upsellCreate.bind(this);
+    this.bindActionToBillingSameShippingCheckbox();
+    this.bindActionToPaymentMethodElements();
   }
 
   private mergeCustomPropertiesWithDefault(
-    customProperties: DeepPartial<IFunnelElementProperties>
-  ): IFunnelElementProperties {
+    customProperties: DeepPartial<ICheckoutElementProperties>
+  ): ICheckoutElementProperties {
     return _.merge(
       {},
-      EcommerceFunnel.DEFAULT_FUNNEL_ELEMENTS_PROPERTIES,
+      CheckoutFlow.DEFAULT_CHECKOUT_ELEMENTS_PROPERTIES,
       customProperties
     );
   }
@@ -100,7 +96,7 @@ class EcommerceFunnel {
     const { shipping, billing } = this.elementsProperties.fields.address;
 
     const shippingFieldsProperties = Object.values(shipping);
-    
+
     const pageRequiredFieldsProps = [
       ...shippingFieldsProperties,
       this.elementsProperties.fields.email,
@@ -146,9 +142,9 @@ class EcommerceFunnel {
     });
   }
 
-  private bindActionBillingSameShippingCheckbox(): void {
+  private bindActionToBillingSameShippingCheckbox(): void {
     const billSameShipElement = document.querySelector(
-      this.elementsProperties.checkout.billing_same_as_shipping_address.selector
+      this.elementsProperties.checkboxes.billing_same_as_shipping_address.selector
     ) as HTMLInputElement;
     if (billSameShipElement) {
       billSameShipElement.addEventListener("change", () => {
@@ -327,7 +323,7 @@ class EcommerceFunnel {
 
   private billingSameAsShippingAddress(): boolean {
     const { selector, defaultValue } =
-      this.elementsProperties.checkout.billing_same_as_shipping_address;
+      this.elementsProperties.checkboxes.billing_same_as_shipping_address;
 
     const billSameShipPageValue = (
       document.querySelector(selector) as HTMLInputElement
@@ -349,17 +345,70 @@ class EcommerceFunnel {
     return billSameShip;
   }
 
-  // ----------------------- PAYMENT RELATED FUNCTIONS -----------------------
+  // ----------------------- PAYMENT METHOD RELATED FUNCTIONS -----------------------
 
-  private setPaymentMethod() {
-
+  private bindActionToPaymentMethodElements() {
+    const { paymentMethodsElements } = this.elementsProperties;
+    for (const paymentMethod in paymentMethodsElements) {
+      const key = paymentMethod as keyof typeof paymentMethodsElements;
+      if (paymentMethodsElements[key]) {
+        const paymentMethodElement = document.querySelector(paymentMethodsElements[key].selector);
+        paymentMethodElement?.addEventListener("click", () => {
+          sessionStorage.setItem("payment_method", paymentMethod);
+        });
+      }
+    }
   }
 
-  private bindActionPaymentMethodButtons() {
-    
+  private switchOrdersCreateMethod() {
+    const paymentMethod = sessionStorage.getItem("payment_method");
+    if (paymentMethod !== null) {
+      switch (paymentMethod) {
+        case "card_token":
+          (window as any).Spreedly.validate();
+          break;
+        case "paypal":
+          this.createPPOrder();
+          break;
+        default:
+          throw new Error(`Payment method ${paymentMethod} is not supported`);
+      } 
+    }
   }
 
-  
+  // ------------------------------ API Utils ------------------------------
+
+  getCartLines(): Array<CartLine> {
+    const lines: Array<CartLine> = [];
+
+    const { selectedItemSelector } = this.elementsProperties.cart;
+    const selectedItems = document.querySelectorAll(selectedItemSelector);
+    for (const item of selectedItems) {
+      const { id, quantity } = (item as HTMLElement).dataset;
+
+      if (!id) {
+        throw new Error(
+          "The selected item must have a data-id attribute to identify the package"
+        );
+      }
+
+      lines.push({
+        package_id: parseInt(id),
+        quantity: quantity !== undefined ? parseInt(quantity) : 1,
+      });
+    }
+
+    return lines;
+  }
+
+  getShippingMethod(): number {
+    return 1;
+  }
+
+  getVouchers(): Array<string> {
+    return [];
+  }
+
   // ------------------------------ API methods ------------------------------
   async saveLead(body: any): Promise<void> {
     // NEEDS TO BE IMPLEMENTED
@@ -370,7 +419,7 @@ class EcommerceFunnel {
     }
   }
 
-  async ordersCreate(body: ParamOrdersCreate): Promise<void> {
+  async ordersCreate(card_token: string): Promise<void> {
     const $$ = document.querySelector.bind(document);
 
     const fieldsValues = sessionStorage.getItem("validFieldsValues");
@@ -382,22 +431,23 @@ class EcommerceFunnel {
     const { shipping, billing, email } = JSON.parse(fieldsValues);
 
     const { use_default_billing_address, use_default_shipping_address } =
-      this.elementsProperties.checkout;
+      this.elementsProperties.checkboxes;
 
     const billSameShip = this.billingSameAsShippingAddress();
+    const nextUrl = getNextUrl();
 
     const bodyData: RequestOrdersCreate = {
       attribution: getAttributionData(),
       billing_same_as_shipping_address: billSameShip,
-      lines: body.lines,
+      lines: this.getCartLines(),
       payment_detail: {
         payment_method: "card_token",
-        card_token: body.card_token,
+        card_token: card_token,
       },
       // payment_failed_url: body.payment_failed_url,
       shipping_address: shipping,
-      shipping_method: body.shipping_method,
-      success_url: body.next_page,
+      shipping_method: this.getShippingMethod(),
+      success_url: nextUrl,
       use_default_billing_address:
         ($$(use_default_billing_address.selector) as HTMLInputElement)
           ?.checked ?? use_default_billing_address.defaultValue,
@@ -418,8 +468,9 @@ class EcommerceFunnel {
       bodyData.billing_address = billing;
     }
 
-    if (body.vouchers) {
-      bodyData.vouchers = body.vouchers;
+    const vouchers = this.getVouchers();
+    if (vouchers.length > 0) {
+      bodyData.vouchers = vouchers;
     }
 
     if (this.developing) {
@@ -435,42 +486,15 @@ class EcommerceFunnel {
     if (!result.payment_complete_url && result.number && result.ref_id) {
       sessionStorage.setItem("order_ref_id", result.ref_id);
       sessionStorage.setItem("order_number", result.number);
-      window.location.href = body.next_page;
+      window.location.href = nextUrl;
     } else if (result.payment_complete_url) {
       window.location.href = result.payment_complete_url;
     }
   }
 
-  async upsellCreate(body: ParamUpsellCreate): Promise<void> {
-    // IS THIS ENOUGHT? COMMENT TO REMIND ME IF THIS IS REALLY ENOUGH (NEED TO TEST)
-    const orderRefId = sessionStorage.getItem("order_ref_id");
-    if (orderRefId === null) {
-      throw new Error(
-        "No order reference ID found in sessionStorage, please call ordersCreate before calling upsellCreate"
-      );
-    }
-
-    const result = await this.campaignApi.ordersUpsellCreate(orderRefId, body);
-
-    if (this.developing) {
-      console.log(`upsellCreate result: ${result}`);
-    }
-
-    if (result.payment_complete_url) {
-      window.location.href = body.next_page;
-    }
-  }
-
-  async orderRetrieve(orderRefId: string): Promise<Partial<Order>> {
-    // IS THIS ENOUGHT? COMMENT TO REMIND ME IF THIS IS REALLY ENOUGH (NEED TO TEST)
-    const result = await this.campaignApi.orderRetrieve(orderRefId);
-
-    if (this.developing) {
-      console.log(`orderRetrieve result: ${result}`);
-    }
-
-    return result;
+  async createPPOrder(): Promise<void> {
+    // NEEDS TO BE IMPLEMENTED
   }
 }
 
-export default EcommerceFunnel;
+export default CheckoutFlow;

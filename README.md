@@ -16,7 +16,7 @@ Os botões que executam a criação na order devem ter um determinado atributo d
 OS CENÁRIOS ABAIXO SOBRE O BILLING ADDRESS ESTÃO DO MAIS COMUM AO MENOS (determinado conferindo vários sites e o estatistico GPT)
 CENÁRIO 1: "checkbox billSameShip" na página de checkout https://heater-efortify.netlify.app/checkout/
 CENÁRIO 2: "checkbox billSameShip" após página de shipping address https://deal.cialix.com/lirtv/gk6kgu7/
-CENÁRIO 3: "não existe checkbox na página é um radio de "yes" ou "no"" https://tryetcgummies.com/berberine/v4/checkout.php?prospect_id=5614 nesse caso o que deve ser feito é colocar um checkbox escondido na página e usa-lo no ecommerceFunnel...
+CENÁRIO 3: "não existe checkbox na página é um radio de "yes" ou "no"" https://tryetcgummies.com/berberine/v4/checkout.php?prospect_id=5614 nesse caso o que deve ser feito é colocar um checkbox escondido na página e usa-lo no CheckoutFlow...
 
 ambos os casos tem 1 padrão, o billing address sempre vêm depois do shipping address
 

@@ -1,7 +1,7 @@
 import { Rules } from "just-validate";
-import { IFunnelElementProperties } from "../../types/services/ecommerceFunnel";
+import { ICheckoutElementProperties } from "../../types/services/checkoutFlow";
 
-const defaultFunnelElementsProps: IFunnelElementProperties = {
+const defaultCheckoutElementsProps: ICheckoutElementProperties = {
   pageFieldsForm: {
     selector: "[data-page-form]",
   },
@@ -257,7 +257,7 @@ const defaultFunnelElementsProps: IFunnelElementProperties = {
       ],
     },
   },
-  checkout: {
+  checkboxes: {
     billing_same_as_shipping_address: {
       selector: "[data-billing-same-as-shipping-address]",
       defaultValue: true
@@ -271,9 +271,6 @@ const defaultFunnelElementsProps: IFunnelElementProperties = {
       defaultValue: false
     },
   },
-  ordersCreateBtn: {
-    selector: "[data-orders-create-btn]",
-  },
   paymentMethodsElements: {
     card_token: {
       selector: "[data-payment-method-card]",
@@ -281,7 +278,10 @@ const defaultFunnelElementsProps: IFunnelElementProperties = {
     paypal: {
       selector: "[data-payment-method-paypal]",
     }
+  },
+  cart: {
+    selectedItemSelector: "[data-selected]",
   }
 };
 
-export default defaultFunnelElementsProps;
+export default defaultCheckoutElementsProps;

@@ -27,7 +27,7 @@ interface CheckboxElement extends Selector {
   defaultValue: boolean;
 }
 
-interface Checkout {
+interface Checkboxes {
   billing_same_as_shipping_address: CheckboxElement,
   use_default_billing_address: CheckboxElement,
   use_default_shipping_address: CheckboxElement,
@@ -47,7 +47,7 @@ interface PaymentMethods {
   external?: Selector;
 }
 
-export interface IFunnelElementProperties {
+export interface ICheckoutElementProperties {
   pageFieldsForm: Selector;
   fields: {
     address: {
@@ -56,11 +56,9 @@ export interface IFunnelElementProperties {
     };
     email: IFieldElementProperties;
   };
-  checkout: Checkout
-  ordersCreateBtn: Selector;
+  checkboxes: Checkboxes
   paymentMethodsElements: PaymentMethods;
-}
-
-export interface IFunnelCallbacks {
-  onValidationSuccess: Function;
+  cart: {
+    selectedItemSelector: string;
+  }
 }
