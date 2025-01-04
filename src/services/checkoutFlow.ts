@@ -394,7 +394,7 @@ class CheckoutFlow {
     )?.checked;
 
     const billSameShipSessionStoragedValue = JSON.parse(
-      sessionStorage.getItem("billing_same_as_shipping_address") || "false"
+      sessionStorage.getItem("billing_same_as_shipping_address") || "null"
     );
 
     const billSameShip =
