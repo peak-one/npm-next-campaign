@@ -1,4 +1,4 @@
-function getAttributionData() {
+function defaultGetAttributionData() {
   let device;
 
   if (
@@ -104,4 +104,4 @@ function getAttributionData() {
   return attributionData;
 }
 
-export default getAttributionData;
+export default defaultGetAttributionData;

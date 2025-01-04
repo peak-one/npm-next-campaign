@@ -1,24 +1,21 @@
 import NextCampaignApi from "../api/nextCampaignApi";
 import JustValidate from "just-validate";
-import _ from "lodash";
+import {
+  mergeCustomPropertiesWithDefault,
+  defaultGetAttributionData,
+  defaultGetNextUrl,
+  defaultGetCartLines,
+  defaultGetShippingMethod,
+  defaultGetVouchers,
+} from "../utils/index.js";
 
 import {
   ICheckoutElementProperties,
   IFieldElementProperties,
   ordersCreateMethods,
 } from "../types/services/checkoutFlow";
-
-import defaultCheckoutElementsProps from "../configs/services/defaultCheckoutElementsProps";
 import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
-
-import getAttributionData from "../utils/getAttributionData";
-import { CartLine } from "../types/campaignsApi/base/CartLine";
-import getNextUrl from "../utils/getNextUrl";
-
-type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
-};
-
+import { DeepPartial } from "../types/DeepPartial.js";
 declare global {
   interface Window {
     CheckoutFlow: {
@@ -27,6 +24,8 @@ declare global {
     Spreedly: any;
   }
 }
+
+import defaultCheckoutElementsProps from "../configs/services/defaultCheckoutElementsProps";
 
 class CheckoutFlow {
   // -------------------------------- CONFIGS --------------------------------
@@ -39,9 +38,6 @@ class CheckoutFlow {
   private campaignApi: NextCampaignApi;
 
   private ordersCreateMethods: ordersCreateMethods;
-
-  private static DEFAULT_CHECKOUT_ELEMENTS_PROPERTIES: ICheckoutElementProperties =
-    defaultCheckoutElementsProps;
 
   /**
    * @description CheckoutFlow is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
@@ -65,9 +61,11 @@ class CheckoutFlow {
 
     this.campaignApi = campaignApi;
 
-    this.elementsProperties = this.mergeCustomPropertiesWithDefault(
-      elementsCustomProperties
-    );
+    this.elementsProperties =
+      mergeCustomPropertiesWithDefault<ICheckoutElementProperties>(
+        elementsCustomProperties,
+        defaultCheckoutElementsProps
+      );
 
     const { selectedItems } = this.elementsProperties;
     const { getCartLines, getShippingMethod, getVouchers } =
@@ -75,9 +73,10 @@ class CheckoutFlow {
     this.ordersCreateMethods = {
       getCartLines:
         getCartLines ??
-        (() => this.defaultGetCartLines(selectedItems.selector)),
-      getShippingMethod: getShippingMethod ?? this.defaultGetShippingMethod,
-      getVouchers: getVouchers ?? this.defaultGetVouchers,
+        (() => defaultGetCartLines(selectedItems.selector, this.developing)),
+      getShippingMethod:
+        getShippingMethod ?? (() => defaultGetShippingMethod()),
+      getVouchers: getVouchers ?? (() => defaultGetVouchers()),
     };
 
     this.validator = new JustValidate(
@@ -97,7 +96,7 @@ class CheckoutFlow {
         window.CheckoutFlow = { ordersCreate: this.ordersCreate.bind(this) };
         this.switchOrdersCreateMethod();
       } else {
-        window.location.href = getNextUrl();
+        window.location.href = defaultGetNextUrl();
       }
     });
 
@@ -105,52 +104,6 @@ class CheckoutFlow {
     this.bindActionToBillingSameShippingCheckbox();
     this.bindActionToPaymentMethodElements();
     sessionStorage.setItem("payment_method", "card_token");
-  }
-
-  private mergeCustomPropertiesWithDefault(
-    customProperties: DeepPartial<ICheckoutElementProperties>
-  ): ICheckoutElementProperties {
-    return _.merge(
-      {},
-      CheckoutFlow.DEFAULT_CHECKOUT_ELEMENTS_PROPERTIES,
-      customProperties
-    );
-  }
-
-  private defaultGetCartLines(selectedItemSelector: string): Array<CartLine> {
-    const lines: Array<CartLine> = [];
-
-    const selectedItems = document.querySelectorAll(selectedItemSelector);
-    for (const item of selectedItems) {
-      const { id, quantity } = (item as HTMLElement).dataset;
-
-      if (!id) {
-        throw new Error(
-          "The selected item must have a data-id attribute to identify the package"
-        );
-      }
-
-      lines.push({
-        package_id: Number(id),
-        quantity: quantity !== undefined ? Number(quantity) : 1,
-      });
-    }
-
-    if (this.developing) {
-      console.log(`defaultGetCartLines method returned:`, lines);
-    }
-
-    return lines;
-  }
-
-  private defaultGetShippingMethod(): number {
-    // NEEDS TO BE IMPLEMENTED ALLOW SHIPPING METHOD + SHIPPING CHECKBOX IF EXISTS
-
-    return 1;
-  }
-
-  private defaultGetVouchers(): Array<string> {
-    return [];
   }
 
   // ----------------------- ADDRESSES FIELDS FUNCTIONS -----------------------
@@ -469,10 +422,10 @@ class CheckoutFlow {
       this.elementsProperties.checkboxes;
 
     const billSameShip = this.billingSameAsShippingAddress();
-    const nextUrl = getNextUrl();
+    const nextUrl = defaultGetNextUrl();
 
     const bodyData: RequestOrdersCreate = {
-      attribution: getAttributionData(),
+      attribution: defaultGetAttributionData(),
       billing_same_as_shipping_address: billSameShip,
       lines: this.ordersCreateMethods.getCartLines(),
       payment_detail: {

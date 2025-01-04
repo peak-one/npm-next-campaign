@@ -3,7 +3,7 @@ import SpreedlyIframe from "./services/spreedlyIframe.js";
 import CheckoutFlow from "./services/checkoutFlow.js";
 import Upsell from "./services/upsell.js";
 import Thankyou from "./services/thankyou.js";
-import wrapMethod from "./utils/wrapMethod.js";
+import * as utils from "./utils/index.js";
 
 export {
   NextCampaignApi,
@@ -11,5 +11,5 @@ export {
   CheckoutFlow,
   Upsell,
   Thankyou,
-  wrapMethod
+  utils
 };

@@ -1,4 +1,4 @@
-export default function getNextUrl(): string {
+function defaultGetNextUrl(): string {
   const nextUrl = sessionStorage.getItem("next_url");
 
   if (nextUrl === null) {
@@ -9,3 +9,5 @@ export default function getNextUrl(): string {
 
   return nextUrl;
 }
+
+export default defaultGetNextUrl;

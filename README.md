@@ -1,3 +1,4 @@
+## CheckoutFlow parameter `elementsCustomProperties` default values
 
 | Element for                                             | Property Key                     | Prop value - selector / seletor         | Prop value - Require Validation | Prop value - default value |
 |---------------------------------------------------------|----------------------------------|-----------------------------------------|---------------------------------|----------------------------|
