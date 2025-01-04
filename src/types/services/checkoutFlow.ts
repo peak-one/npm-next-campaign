@@ -59,7 +59,7 @@ export interface ICheckoutElementProperties {
   };
   checkboxes: Checkboxes
   paymentMethodsElements: PaymentMethods;
-  selectedItemSelector: string;
+  selectedItems: Selector;
 }
 
 export interface ordersCreateMethods {

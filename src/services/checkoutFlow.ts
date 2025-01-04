@@ -69,12 +69,13 @@ class CheckoutFlow {
       elementsCustomProperties
     );
 
-    const { selectedItemSelector } = this.elementsProperties;
+    const { selectedItems } = this.elementsProperties;
     const { getCartLines, getShippingMethod, getVouchers } =
       ordersCreateMethods;
     this.ordersCreateMethods = {
       getCartLines:
-        getCartLines ?? (() => this.defaultGetCartLines(selectedItemSelector)),
+        getCartLines ??
+        (() => this.defaultGetCartLines(selectedItems.selector)),
       getShippingMethod: getShippingMethod ?? this.defaultGetShippingMethod,
       getVouchers: getVouchers ?? this.defaultGetVouchers,
     };

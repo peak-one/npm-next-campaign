@@ -22,7 +22,7 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
             {
               rule: Rules.CustomRegexp,
               value: /\b([A-ZÀ-ÿ][-,a-z. ']+[ ]*)+$/gi,
-              errorMessage: "Contains an invalid character",
+              errorMessage: "First name contains an invalid character",
             },
           ],
         },
@@ -40,7 +40,7 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
             {
               rule: Rules.CustomRegexp,
               value: /\b([A-ZÀ-ÿ][-,a-z. ']+[ ]*)+$/gi,
-              errorMessage: "Contains an invalid character",
+              errorMessage: "Last name Contains an invalid character",
             },
           ],
         },
@@ -279,7 +279,9 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
       selector: "[data-payment-method-paypal]",
     }
   },
-  selectedItemSelector: "[data-selected]",
+  selectedItems: {
+    selector: "[data-selected]",
+  },
 };
 
 export default defaultCheckoutElementsProps;
