@@ -5,6 +5,7 @@ import _ from "lodash";
 import {
   ICheckoutElementProperties,
   IFieldElementProperties,
+  ordersCreateMethods,
 } from "../types/services/checkoutFlow";
 
 import defaultCheckoutElementsProps from "../configs/services/defaultCheckoutElementsProps";
@@ -13,11 +14,19 @@ import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
 import getAttributionData from "../utils/getAttributionData";
 import { CartLine } from "../types/campaignsApi/base/CartLine";
 import getNextUrl from "../utils/getNextUrl";
-import SpreedlyIframe from "./spreedlyIframe";
 
 type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
+
+declare global {
+  interface Window {
+    CheckoutFlow: {
+      ordersCreate: (card_token: string) => Promise<void>;
+    };
+    Spreedly: any;
+  }
+}
 
 class CheckoutFlow {
   // -------------------------------- CONFIGS --------------------------------
@@ -29,17 +38,22 @@ class CheckoutFlow {
 
   private campaignApi: NextCampaignApi;
 
+  private ordersCreateMethods: ordersCreateMethods;
+
   private static DEFAULT_CHECKOUT_ELEMENTS_PROPERTIES: ICheckoutElementProperties =
     defaultCheckoutElementsProps;
 
   /**
    * @description CheckoutFlow is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
-   * @param campaignApi - An instance of `NextCampaignApi` class to handle the API requests
-   * @param elementsCustomProperties - Custom properties to override the default properties of the funnel elements
+   * @param campaignApi - An instance of `NextCampaignApi` class to handle the API requests with a specific campaign
+   * @param elementsCustomProperties - Custom properties to overwrite the default properties of the checkout flow elements
+   * @param ordersCreateMethods - Custom methods to overwrite the default methods that returns the "lines", "shipping_method" and "vouchers" for the ordersCreate method
+   * @param showDevLogs - Enable or disable the logs in the browser console
    */
   constructor(
     campaignApi: NextCampaignApi,
     elementsCustomProperties: DeepPartial<ICheckoutElementProperties> = {},
+    ordersCreateMethods: Partial<ordersCreateMethods> = {},
     showDevLogs: boolean = false
   ) {
     if (window.location.hostname === "localhost" && !showDevLogs) {
@@ -55,6 +69,16 @@ class CheckoutFlow {
       elementsCustomProperties
     );
 
+    const { selectedItemSelector } = this.elementsProperties;
+    const { getCartLines, getShippingMethod, getVouchers } =
+      ordersCreateMethods;
+    this.ordersCreateMethods = {
+      getCartLines:
+        getCartLines ?? (() => this.defaultGetCartLines(selectedItemSelector)),
+      getShippingMethod: getShippingMethod ?? this.defaultGetShippingMethod,
+      getVouchers: getVouchers ?? this.defaultGetVouchers,
+    };
+
     this.validator = new JustValidate(
       this.elementsProperties.pageFieldsForm.selector
     );
@@ -66,9 +90,10 @@ class CheckoutFlow {
     this.validator.onSuccess(() => {
       this.storeInSessionPageValidFieldsValues();
 
-      const spreedlyCardMachine = (window as any).Spreedly;
+      const spreedlyCardMachine = window.Spreedly;
       const isCheckoutPage = spreedlyCardMachine !== undefined;
       if (isCheckoutPage) {
+        window.CheckoutFlow = { ordersCreate: this.ordersCreate.bind(this) };
         this.switchOrdersCreateMethod();
       } else {
         window.location.href = getNextUrl();
@@ -78,6 +103,7 @@ class CheckoutFlow {
     this.setPageRequiredFieldsForValidation();
     this.bindActionToBillingSameShippingCheckbox();
     this.bindActionToPaymentMethodElements();
+    sessionStorage.setItem("payment_method", "card_token");
   }
 
   private mergeCustomPropertiesWithDefault(
@@ -90,9 +116,45 @@ class CheckoutFlow {
     );
   }
 
+  private defaultGetCartLines(selectedItemSelector: string): Array<CartLine> {
+    const lines: Array<CartLine> = [];
+
+    const selectedItems = document.querySelectorAll(selectedItemSelector);
+    for (const item of selectedItems) {
+      const { id, quantity } = (item as HTMLElement).dataset;
+
+      if (!id) {
+        throw new Error(
+          "The selected item must have a data-id attribute to identify the package"
+        );
+      }
+
+      lines.push({
+        package_id: Number(id),
+        quantity: quantity !== undefined ? Number(quantity) : 1,
+      });
+    }
+
+    if (this.developing) {
+      console.log(`defaultGetCartLines method returned:`, lines);
+    }
+
+    return lines;
+  }
+
+  private defaultGetShippingMethod(): number {
+    // NEEDS TO BE IMPLEMENTED ALLOW SHIPPING METHOD + SHIPPING CHECKBOX IF EXISTS
+
+    return 1;
+  }
+
+  private defaultGetVouchers(): Array<string> {
+    return [];
+  }
+
   // ----------------------- ADDRESSES FIELDS FUNCTIONS -----------------------
 
-  getPageRequiredFieldsProps(): Array<IFieldElementProperties> {
+  private getPageRequiredFieldsProps(): Array<IFieldElementProperties> {
     const { shipping, billing } = this.elementsProperties.fields.address;
 
     const shippingFieldsProperties = Object.values(shipping);
@@ -144,7 +206,8 @@ class CheckoutFlow {
 
   private bindActionToBillingSameShippingCheckbox(): void {
     const billSameShipElement = document.querySelector(
-      this.elementsProperties.checkboxes.billing_same_as_shipping_address.selector
+      this.elementsProperties.checkboxes.billing_same_as_shipping_address
+        .selector
     ) as HTMLInputElement;
     if (billSameShipElement) {
       billSameShipElement.addEventListener("change", () => {
@@ -184,7 +247,7 @@ class CheckoutFlow {
     });
   }
 
-  getPageFieldsValues() {
+  private getPageFieldsValues() {
     const $$ = document.querySelector.bind(document);
 
     const { shipping, billing } = this.elementsProperties.fields.address;
@@ -352,7 +415,9 @@ class CheckoutFlow {
     for (const paymentMethod in paymentMethodsElements) {
       const key = paymentMethod as keyof typeof paymentMethodsElements;
       if (paymentMethodsElements[key]) {
-        const paymentMethodElement = document.querySelector(paymentMethodsElements[key].selector);
+        const paymentMethodElement = document.querySelector(
+          paymentMethodsElements[key].selector
+        );
         paymentMethodElement?.addEventListener("click", () => {
           sessionStorage.setItem("payment_method", paymentMethod);
         });
@@ -365,48 +430,17 @@ class CheckoutFlow {
     if (paymentMethod !== null) {
       switch (paymentMethod) {
         case "card_token":
-          (window as any).Spreedly.validate();
+          window.Spreedly.validate();
           break;
         case "paypal":
           this.createPPOrder();
           break;
         default:
           throw new Error(`Payment method ${paymentMethod} is not supported`);
-      } 
-    }
-  }
-
-  // ------------------------------ API Utils ------------------------------
-
-  getCartLines(): Array<CartLine> {
-    const lines: Array<CartLine> = [];
-
-    const { selectedItemSelector } = this.elementsProperties.cart;
-    const selectedItems = document.querySelectorAll(selectedItemSelector);
-    for (const item of selectedItems) {
-      const { id, quantity } = (item as HTMLElement).dataset;
-
-      if (!id) {
-        throw new Error(
-          "The selected item must have a data-id attribute to identify the package"
-        );
       }
-
-      lines.push({
-        package_id: parseInt(id),
-        quantity: quantity !== undefined ? parseInt(quantity) : 1,
-      });
+    } else {
+      throw new Error("No payment method found in the sessionStorage");
     }
-
-    return lines;
-  }
-
-  getShippingMethod(): number {
-    return 1;
-  }
-
-  getVouchers(): Array<string> {
-    return [];
   }
 
   // ------------------------------ API methods ------------------------------
@@ -439,14 +473,14 @@ class CheckoutFlow {
     const bodyData: RequestOrdersCreate = {
       attribution: getAttributionData(),
       billing_same_as_shipping_address: billSameShip,
-      lines: this.getCartLines(),
+      lines: this.ordersCreateMethods.getCartLines(),
       payment_detail: {
         payment_method: "card_token",
         card_token: card_token,
       },
       // payment_failed_url: body.payment_failed_url,
       shipping_address: shipping,
-      shipping_method: this.getShippingMethod(),
+      shipping_method: this.ordersCreateMethods.getShippingMethod(),
       success_url: nextUrl,
       use_default_billing_address:
         ($$(use_default_billing_address.selector) as HTMLInputElement)
@@ -468,7 +502,7 @@ class CheckoutFlow {
       bodyData.billing_address = billing;
     }
 
-    const vouchers = this.getVouchers();
+    const vouchers = this.ordersCreateMethods.getVouchers();
     if (vouchers.length > 0) {
       bodyData.vouchers = vouchers;
     }

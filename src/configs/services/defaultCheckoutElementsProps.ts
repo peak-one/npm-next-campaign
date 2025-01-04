@@ -279,9 +279,7 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
       selector: "[data-payment-method-paypal]",
     }
   },
-  cart: {
-    selectedItemSelector: "[data-selected]",
-  }
+  selectedItemSelector: "[data-selected]",
 };
 
 export default defaultCheckoutElementsProps;

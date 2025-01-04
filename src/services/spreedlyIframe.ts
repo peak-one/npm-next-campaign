@@ -1,9 +1,25 @@
+import { ICardPaymentElements } from "../types/services/spreedlyIframe";
+
+declare global {
+  interface Window {
+    CheckoutFlow: {
+      ordersCreate: (card_token: string) => Promise<void>;
+    };
+    Spreedly: any;
+  }
+}
+
 class SpreedlyIframe {
   private spreedly: any;
   private paymentEnvKey: string;
+  private cardPaymentElements: ICardPaymentElements;
 
-  constructor(paymentEnvKey: string) {
+  constructor(
+    paymentEnvKey: string,
+    cardPaymentElements: ICardPaymentElements
+  ) {
     this.paymentEnvKey = paymentEnvKey;
+    this.cardPaymentElements = cardPaymentElements;
     this.init();
   }
 
@@ -18,7 +34,7 @@ class SpreedlyIframe {
 
   private loadSpreedlyScript(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
+      const script = document.createElement("script");
       script.src = "https://core.spreedly.com/iframe/iframe-v1.min.js";
       script.onload = () => resolve();
       script.onerror = () => reject(new Error("Script load error"));
@@ -26,12 +42,11 @@ class SpreedlyIframe {
     });
   }
 
-  private initialize() {  
-    this.spreedly = (window as any).Spreedly;
+  private initialize() {
+    this.spreedly = window.Spreedly;
 
     if (!this.spreedly) {
-      console.error("Spreedly is not defined");
-      return;
+      throw new Error("Spreedly is not defined");
     }
 
     this.spreedly.init(this.paymentEnvKey, {
@@ -40,8 +55,9 @@ class SpreedlyIframe {
     });
 
     this.spreedly.on("ready", this.onReady.bind(this));
-    this.spreedly.on("errors", this.handleErrors.bind(this));
-    this.spreedly.on("paymentMethod", this.handlePaymentMethod.bind(this));
+    this.spreedly.on("validation", this.onValidation.bind(this));
+    this.spreedly.on("errors", this.onErrors.bind(this));
+    this.spreedly.on("paymentMethod", this.onPayment.bind(this));
   }
 
   private onReady(styles: string) {
@@ -56,21 +72,79 @@ class SpreedlyIframe {
     this.spreedly.setStyle("placeholder", "color: #cacaca;");
   }
 
-  private handleErrors(errors: any) {
-    console.error("Spreedly errors:", errors);
+  private getExpirityCardDateValues(): { expMonth: string; expYear: string } {
+    const { expMonthElement, expYearElement, expirityDateElement } = this.cardPaymentElements;
+
+    if (expirityDateElement) {
+      let [expMonth, expYear] = expirityDateElement.value.split("/");
+
+      if (expYear.length === 2) {
+        expYear = `${String(new Date().getFullYear()).slice(0,2)}${expYear}`;
+      }
+
+      return { expMonth, expYear };
+    }
+
+    if (!expMonthElement || !expYearElement) {
+      throw new Error("Expirity date elements are not defined");
+    }
+
+    return {
+      expMonth: expMonthElement.value,
+      expYear: expYearElement.value,
+    };
   }
 
-  private handlePaymentMethod(paymentMethod: any) {
-    // const firstName = firstNameEl.value || "Peak";
-    // const lastName = lastNameEl.value || "One";
-    // const fullName = `${firstName} ${lastName}`;
+  private submitPaymentForm() {
+    const { firstNameElement, lastNameElement } = this.cardPaymentElements;
+
+    const { expMonth, expYear } = this.getExpirityCardDateValues();
 
     const requiredFields = {
-      full_name: "Peak One",
-      month: "12",
-      year: "2024"
+      full_name: `${firstNameElement.value} ${lastNameElement.value}`,
+      month: expMonth,
+      year: expYear,
     };
     this.spreedly.tokenizeCreditCard(requiredFields);
+  }
+
+  private showError(msg: string) {
+    this.cardPaymentElements.errorMsgElement.innerHTML = msg;
+    setTimeout(() => {
+      this.cardPaymentElements.errorMsgElement.innerHTML = "";
+    }, 5000);
+  }
+
+  private onValidation(inputProperties: any) {
+    if (!inputProperties.validNumber) {
+      this.showError("Invalid Credit Card");
+      this.spreedly.transferFocus("number");
+    } else if (!inputProperties.validCvv) {
+      this.showError("Invalid CVV");
+      this.spreedly.transferFocus("cvv");
+    } else {
+      this.submitPaymentForm();
+    }
+  }
+
+  private onErrors(errors: any) {
+    const { expMonth, expYear } = this.getExpirityCardDateValues();
+
+    for (let i = 0; i < errors.length; i++) {
+      let error = errors[i];
+      if (error.message === "Year is invalid" || expYear === "") {
+        this.showError("Card year is invalid");
+      } else if (
+        Number(expMonth) < new Date().getMonth() + 1 ||
+        expMonth === ""
+      ) {
+        this.showError("Card month is invalid");
+      }
+    }
+  }
+
+  private async onPayment(token: string) {
+    await window.CheckoutFlow.ordersCreate(token);
   }
 }
 

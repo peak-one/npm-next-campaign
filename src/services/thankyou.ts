@@ -35,6 +35,7 @@ class Thankyou {
       "payment_method",
       "order_ref_id",
       "order_number",
+      "next_url",
     ];
     itemsToRemove.forEach((item) => {
       sessionStorage.removeItem(item);

@@ -1,4 +1,5 @@
 import { FieldRuleInterface } from "just-validate";
+import { CartLine } from "../campaignsApi/base/CartLine";
 
 interface Selector {
   selector: string;
@@ -58,7 +59,11 @@ export interface ICheckoutElementProperties {
   };
   checkboxes: Checkboxes
   paymentMethodsElements: PaymentMethods;
-  cart: {
-    selectedItemSelector: string;
-  }
+  selectedItemSelector: string;
+}
+
+export interface ordersCreateMethods {
+  getCartLines: (...args: any[]) => Array<CartLine>;
+  getShippingMethod: (...args: any[]) => number;
+  getVouchers: (...args: any[]) => Array<string>;
 }
