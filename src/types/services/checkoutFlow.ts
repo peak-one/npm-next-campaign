@@ -1,5 +1,6 @@
 import { FieldRuleInterface } from "just-validate";
 import { CartLine } from "../campaignsApi/base/CartLine";
+import { Iti } from "intl-tel-input";
 
 interface Selector {
   selector: string;
@@ -8,6 +9,10 @@ interface Selector {
 export interface IFieldElementProperties extends Selector {
   requireValidation: boolean;
   validationRules?: Array<FieldRuleInterface>;
+}
+
+export interface IPhoneElementProperties extends Selector {
+  iti: Iti | undefined;
 }
 
 export interface IAddressElementsProperties {
@@ -20,7 +25,7 @@ export interface IAddressElementsProperties {
   state: IFieldElementProperties;
   postcode: IFieldElementProperties;
   country: IFieldElementProperties;
-  phone_number: IFieldElementProperties;
+  phone_number: IPhoneElementProperties;
   notes: IFieldElementProperties;
 }
 

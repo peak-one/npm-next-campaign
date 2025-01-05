@@ -117,7 +117,7 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
         },
         phone_number: {
           selector: "[data-phone]",
-          requireValidation: false,
+          iti: undefined
         },
         notes: {
           selector: "[data-notes]",
@@ -231,7 +231,7 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
         },
         phone_number: {
           selector: "[data-billing-phone]",
-          requireValidation: false,
+          iti: undefined
         },
         notes: {
           selector: "[data-billing-notes]",

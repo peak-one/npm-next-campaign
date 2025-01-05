@@ -1,5 +1,7 @@
 import NextCampaignApi from "../api/nextCampaignApi";
 import JustValidate from "just-validate";
+import intlTelInput from "intl-tel-input";
+
 import {
   mergeCustomPropertiesWithDefault,
   defaultGetAttributionData,
@@ -12,6 +14,7 @@ import {
 import {
   ICheckoutElementProperties,
   IFieldElementProperties,
+  IPhoneElementProperties,
   ordersCreateMethods,
 } from "../types/services/checkoutFlow";
 import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
@@ -33,11 +36,11 @@ class CheckoutFlow {
 
   private elementsProperties: ICheckoutElementProperties;
 
-  private validator: JustValidate;
-
   private campaignApi: NextCampaignApi;
 
   private ordersCreateMethods: ordersCreateMethods;
+
+  private validator: JustValidate;
 
   /**
    * @description CheckoutFlow is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
@@ -67,18 +70,6 @@ class CheckoutFlow {
         defaultCheckoutElementsProps
       );
 
-    const { selectedItems } = this.elementsProperties;
-    const { getCartLines, getShippingMethod, getVouchers } =
-      ordersCreateMethods;
-    this.ordersCreateMethods = {
-      getCartLines:
-        getCartLines ??
-        (() => defaultGetCartLines(selectedItems.selector, this.developing)),
-      getShippingMethod:
-        getShippingMethod ?? (() => defaultGetShippingMethod()),
-      getVouchers: getVouchers ?? (() => defaultGetVouchers()),
-    };
-
     this.validator = new JustValidate(
       this.elementsProperties.pageFieldsForm.selector
     );
@@ -103,10 +94,52 @@ class CheckoutFlow {
     this.setPageRequiredFieldsForValidation();
     this.bindActionToBillingSameShippingCheckbox();
     this.bindActionToPaymentMethodElements();
+
+    const { selectedItems } = this.elementsProperties;
+    const { getCartLines, getShippingMethod, getVouchers } =
+      ordersCreateMethods;
+    this.ordersCreateMethods = {
+      getCartLines:
+        getCartLines ??
+        (() => defaultGetCartLines(selectedItems.selector, this.developing)),
+      getShippingMethod:
+        getShippingMethod ?? (() => defaultGetShippingMethod()),
+      getVouchers: getVouchers ?? (() => defaultGetVouchers()),
+    };
+
     sessionStorage.setItem("payment_method", "card_token");
+    this.loadIntlTelInput();
   }
 
   // ----------------------- ADDRESSES FIELDS FUNCTIONS -----------------------
+
+  private async loadIntlTelInput(): Promise<void> {
+    const instanciateIntlTelInput = (phoneProps: IPhoneElementProperties) => {
+      const phoneElement = document.querySelector(phoneProps.selector);
+
+      if (phoneElement === null) {
+        throw new Error(
+          `Element with selector ${phoneProps.selector} not found`
+        );
+      }
+
+      phoneProps.iti = intlTelInput(phoneElement as HTMLInputElement, {
+        // @ts-ignore
+        loadUtils: () => import("intl-tel-input/utils"),
+        initialCountry: "us",
+        strictMode: true,
+        onlyCountries: ["us"],
+      });
+      (phoneElement.parentNode as HTMLElement)!.style.width = "100%";
+    };
+
+    instanciateIntlTelInput(
+      this.elementsProperties.fields.address.shipping.phone_number
+    );
+    instanciateIntlTelInput(
+      this.elementsProperties.fields.address.billing.phone_number
+    );
+  }
 
   private getPageRequiredFieldsProps(): Array<IFieldElementProperties> {
     const { shipping, billing } = this.elementsProperties.fields.address;
@@ -142,10 +175,10 @@ class CheckoutFlow {
           this.validator.addField(field.selector, field.validationRules!);
         } else if (this.developing) {
           console.log(
-            `Field selector: ${field.selector} ${
+            `INFO: element => ${field.selector} ${
               fieldIsPresent
-                ? "has found in the page"
-                : "has not found in the page"
+                ? "has FOUND in the page"
+                : "has NOT found in the page"
             } and the requireValidation value is = ${field.requireValidation}`
           );
         }
@@ -233,9 +266,7 @@ class CheckoutFlow {
           ($$(shipping.city.selector) as HTMLInputElement)?.value || undefined,
         notes:
           ($$(shipping.notes.selector) as HTMLInputElement)?.value || undefined,
-        phone_number:
-          ($$(shipping.phone_number.selector) as HTMLInputElement)?.value ||
-          undefined,
+        phone_number: shipping.phone_number.iti?.getNumber() || undefined,
         postcode:
           ($$(shipping.postcode.selector) as HTMLInputElement)?.value ||
           undefined,
@@ -266,9 +297,7 @@ class CheckoutFlow {
           ($$(billing.city.selector) as HTMLInputElement)?.value || undefined,
         notes:
           ($$(billing.notes.selector) as HTMLInputElement)?.value || undefined,
-        phone_number:
-          ($$(billing.phone_number.selector) as HTMLInputElement)?.value ||
-          undefined,
+        phone_number: billing.phone_number.iti?.getNumber() || undefined,
         postcode:
           ($$(billing.postcode.selector) as HTMLInputElement)?.value ||
           undefined,
@@ -446,7 +475,7 @@ class CheckoutFlow {
         first_name: shipping.first_name,
         last_name: shipping.last_name,
         email,
-        phone_number: shipping.phone_number,
+        phone_number: shipping.phone_number.iti?.getNumber(),
         language: "en",
       },
     };

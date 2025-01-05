@@ -20,6 +20,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "intl-tel-input": "^25.2.1",
     "just-validate": "^4.3.0",
     "lodash": "^4.17.21"
   }
