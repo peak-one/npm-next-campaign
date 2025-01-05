@@ -95,13 +95,30 @@ class SpreedlyIframe {
     };
   }
 
-  private submitPaymentForm() {
-    const { firstNameElement, lastNameElement } = this.cardPaymentElements;
+  private getFullName(): string {
+    const storagedFieldsValues = sessionStorage.getItem("validFieldsValues");
 
+    if (!storagedFieldsValues) {
+      console.warn("Fields values are not defined");
+      const { firstNameElement, lastNameElement } = this.cardPaymentElements;
+
+      if (!firstNameElement || !lastNameElement) {
+        throw new Error("Full name elements are not defined");
+      }
+
+      return `${firstNameElement.value} ${lastNameElement.value}`;
+    }
+
+    const { first_name, last_name } = JSON.parse(storagedFieldsValues).shipping;
+
+    return `${first_name} ${last_name}`;
+  }
+
+  private submitPaymentForm() {
     const { expMonth, expYear } = this.getExpirityCardDateValues();
 
     const requiredFields = {
-      full_name: `${firstNameElement.value} ${lastNameElement.value}`,
+      full_name: this.getFullName(),
       month: expMonth,
       year: expYear,
     };

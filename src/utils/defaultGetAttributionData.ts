@@ -44,9 +44,9 @@ function defaultGetAttributionData() {
   function getStoragedData(itemName: string) {
     const stringifiedValue =
       sessionStorage.getItem(itemName) || localStorage.getItem(itemName);
-    if (stringifiedValue === "null") return null;
+    if (stringifiedValue === null) return null;
 
-    return stringifiedValue ? JSON.parse(stringifiedValue) : null;
+    return typeof stringifiedValue === "string" ? stringifiedValue : JSON.parse(stringifiedValue);
   }
 
   function setPayloadAttrItem(
