@@ -1,6 +1,7 @@
 import { FieldRuleInterface } from "just-validate";
 import { CartLine } from "../campaignsApi/base/CartLine";
 import { Iti } from "intl-tel-input";
+import { Attribution } from "../campaignsApi/base/Attribution";
 
 interface Selector {
   selector: string;
@@ -68,6 +69,7 @@ export interface ICheckoutElementProperties {
 }
 
 export interface ordersCreateMethods {
+  getAttributionData: (...args: any[]) => Attribution;
   getCartLines: (...args: any[]) => Array<CartLine>;
   getShippingMethod: (...args: any[]) => number;
   getVouchers: (...args: any[]) => Array<string>;

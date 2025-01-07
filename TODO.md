@@ -1,8 +1,4 @@
-Lógica para a criação do pedido
-
-1. se na página existir os elementos para cartão:
-  2. o spreedly deve ser instanciado, já que ele que cuida do pagamento via cartão na campaigns API
-3. se o meio de pagamento for cartão
+- se na página existir os elementos para cartão, então o spreedly deve ser instanciado, já que ele que cuida do pagamento via cartão na campaigns API
 
 - Implement defaultGetShippingMethod
 

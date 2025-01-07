@@ -96,9 +96,11 @@ class CheckoutFlow {
     this.bindActionToPaymentMethodElements();
 
     const { selectedItems } = this.elementsProperties;
-    const { getCartLines, getShippingMethod, getVouchers } =
+    const { getAttributionData, getCartLines, getShippingMethod, getVouchers } =
       ordersCreateMethods;
     this.ordersCreateMethods = {
+      getAttributionData:
+        getAttributionData ?? (() => defaultGetAttributionData()),
       getCartLines:
         getCartLines ??
         (() => defaultGetCartLines(selectedItems.selector, this.developing)),
@@ -457,7 +459,7 @@ class CheckoutFlow {
     const nextUrl = defaultGetNextUrl();
 
     const bodyData: RequestOrdersCreate = {
-      attribution: defaultGetAttributionData(),
+      attribution: this.ordersCreateMethods.getAttributionData(),
       billing_same_as_shipping_address: billSameShip,
       lines: this.ordersCreateMethods.getCartLines(),
       payment_detail: {
