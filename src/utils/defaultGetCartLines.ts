@@ -11,8 +11,9 @@ function defaultGetCartLines(
     const { id, quantity } = (item as HTMLElement).dataset;
 
     if (!id) {
+      console.error(item);
       throw new Error(
-        "The selected item must have a data-id attribute to identify the package"
+        `The selected element/package above must have a data-id attribute to identify the package`
       );
     }
 

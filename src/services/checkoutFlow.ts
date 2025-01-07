@@ -118,8 +118,8 @@ class CheckoutFlow {
       const phoneElement = document.querySelector(phoneProps.selector);
 
       if (phoneElement === null) {
-        throw new Error(
-          `Element with selector ${phoneProps.selector} not found`
+        return console.warn(
+          `CHECKOUT FLOW WARNING: Element with selector ${phoneProps.selector} not found`
         );
       }
 
@@ -174,8 +174,8 @@ class CheckoutFlow {
         if (fieldIsPresent && field.requireValidation) {
           this.validator.addField(field.selector, field.validationRules!);
         } else if (this.developing) {
-          console.log(
-            `INFO: element => ${field.selector} ${
+          console.warn(
+            `CHECKOUT FLOW WARNING: element => ${field.selector} ${
               fieldIsPresent
                 ? "has FOUND in the page"
                 : "has NOT found in the page"
@@ -403,6 +403,9 @@ class CheckoutFlow {
         );
         paymentMethodElement?.addEventListener("click", () => {
           sessionStorage.setItem("payment_method", paymentMethod);
+          if (this.developing) {
+            console.log(`Payment method selected: ${paymentMethod}`);
+          }
         });
       }
     }
