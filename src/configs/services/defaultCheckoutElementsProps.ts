@@ -270,6 +270,10 @@ const defaultCheckoutElementsProps: ICheckoutElementProperties = {
       selector: "[data-default-shipping-address]",
       defaultValue: false
     },
+    fast_shipping: {
+      selector: "[data-special-shipping]",
+      defaultValue: false
+    }
   },
   paymentMethodsElements: {
     card_token: {

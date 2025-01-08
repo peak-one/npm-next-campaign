@@ -38,6 +38,7 @@ interface Checkboxes {
   billing_same_as_shipping_address: CheckboxElement,
   use_default_billing_address: CheckboxElement,
   use_default_shipping_address: CheckboxElement,
+  fast_shipping: CheckboxElement,
 }
 
 interface PaymentMethods {

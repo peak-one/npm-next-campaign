@@ -93,24 +93,34 @@ class CheckoutFlow {
 
     this.setPageRequiredFieldsForValidation();
     this.bindActionToBillingSameShippingCheckbox();
-    this.bindActionToPaymentMethodElements();
 
-    const { selectedItems } = this.elementsProperties;
+    const { selectedItems, checkboxes } = this.elementsProperties;
     const { getAttributionData, getCartLines, getShippingMethod, getVouchers } =
       ordersCreateMethods;
     this.ordersCreateMethods = {
       getAttributionData:
         getAttributionData ?? (() => defaultGetAttributionData()),
+
       getCartLines:
         getCartLines ??
         (() => defaultGetCartLines(selectedItems.selector, this.developing)),
+
       getShippingMethod:
-        getShippingMethod ?? (() => defaultGetShippingMethod()),
+        getShippingMethod ??
+        (() =>
+          defaultGetShippingMethod(
+            checkboxes.fast_shipping.selector,
+            selectedItems.selector
+          )),
+
       getVouchers: getVouchers ?? (() => defaultGetVouchers()),
     };
 
     sessionStorage.setItem("payment_method", "card_token");
     this.loadIntlTelInput();
+
+    this.setCheckboxesDefaultValues();
+    this.bindActionToPaymentMethodElements();
   }
 
   // ----------------------- ADDRESSES FIELDS FUNCTIONS -----------------------
@@ -191,6 +201,19 @@ class CheckoutFlow {
         );
       }
     });
+  }
+
+  private setCheckboxesDefaultValues(): void {
+    const { checkboxes } = this.elementsProperties;
+
+    for (const checkbox in checkboxes) {
+      const key = checkbox as keyof typeof checkboxes;
+      const checkboxElement = document.querySelector(checkboxes[key].selector);
+      if (checkboxElement) {
+        (checkboxElement as HTMLInputElement).checked =
+          checkboxes[key].defaultValue;
+      }
+    }
   }
 
   private bindActionToBillingSameShippingCheckbox(): void {
