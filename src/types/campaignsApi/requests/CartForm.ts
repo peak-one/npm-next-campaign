@@ -6,7 +6,7 @@ import { User } from "../base/User";
 interface CartUser extends Omit<User, "ip" | "user_agent"> {}
 
 export default interface CartsCreate {
-  address: Address;
+  address?: Address;
   attribution?: Attribution;
   lines: Array<CartLine>;
   user: CartUser;

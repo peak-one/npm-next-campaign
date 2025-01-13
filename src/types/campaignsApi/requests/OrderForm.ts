@@ -22,7 +22,7 @@ interface PaymentDetail {
     | "external";
 }
 
-export default interface OrdersCreate {
+export interface OrdersCreateCard {
   attribution?: Attribution;
   billing_address?: RequestAddress;
   billing_same_as_shipping_address?: boolean;
@@ -37,3 +37,7 @@ export default interface OrdersCreate {
   user: User;
   vouchers?: Array<string>;
 }
+
+export interface OrdersCreatePaypal
+  extends Omit<OrdersCreateCard, "shipping_address"> {}
+

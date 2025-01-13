@@ -1,5 +1,5 @@
 import CartForm from "../types/campaignsApi/requests/CartForm";
-import OrderForm from "../types/campaignsApi/requests/OrderForm";
+import { OrdersCreateCard, OrdersCreatePaypal } from "../types/campaignsApi/requests/OrderForm";
 import UpsellForm from "../types/campaignsApi/requests/UpsellForm";
 import Campaign from "../types/campaignsApi/responses/Campaign";
 import Cart from "../types/campaignsApi/responses/Cart";
@@ -83,7 +83,7 @@ class NextCampaignApi {
     return await this.post("carts", body);
   }
 
-  async ordersCreate(body: OrderForm): Promise<Partial<Order>> {
+  async ordersCreate(body: OrdersCreateCard | OrdersCreatePaypal): Promise<Partial<Order>> {
     return await this.post("orders", body);
   }
 

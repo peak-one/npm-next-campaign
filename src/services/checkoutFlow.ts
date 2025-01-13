@@ -17,7 +17,7 @@ import {
   IPhoneElementProperties,
   ordersCreateMethods,
 } from "../types/services/checkoutFlow";
-import RequestOrdersCreate from "../types/campaignsApi/requests/OrderForm";
+import { OrdersCreateCard, OrdersCreatePaypal } from "../types/campaignsApi/requests/OrderForm";
 import { DeepPartial } from "../types/DeepPartial.js";
 declare global {
   interface Window {
@@ -41,6 +41,8 @@ class CheckoutFlow {
   private ordersCreateMethods: ordersCreateMethods;
 
   private validator: JustValidate;
+
+  private sentLead: boolean = false;
 
   /**
    * @description CheckoutFlow is used to integrate a funnel with `29next campaigns API` and handle the `form validation`
@@ -119,6 +121,7 @@ class CheckoutFlow {
     sessionStorage.setItem("payment_method", "card_token");
     this.loadIntlTelInput();
 
+    this.setSaveLead();
     this.setCheckboxesDefaultValues();
     this.bindActionToPaymentMethodElements();
   }
@@ -392,6 +395,17 @@ class CheckoutFlow {
     );
   }
 
+  private getStoragedPageValidFieldsValues() {
+    const fieldsValues = sessionStorage.getItem("validFieldsValues");
+    if (fieldsValues === null) {
+      throw new Error(
+        "No fields values found in sessionStorage, please call storeInSessionPageValidFieldsValues before making an order"
+      );
+    }
+
+    return JSON.parse(fieldsValues);
+  }
+
   private billingSameAsShippingAddress(): boolean {
     const { selector, defaultValue } =
       this.elementsProperties.checkboxes.billing_same_as_shipping_address;
@@ -444,7 +458,7 @@ class CheckoutFlow {
           window.Spreedly.validate();
           break;
         case "paypal":
-          this.createPPOrder();
+          this.createPayPalOrder();
           break;
         default:
           throw new Error(`Payment method ${paymentMethod} is not supported`);
@@ -455,25 +469,70 @@ class CheckoutFlow {
   }
 
   // ------------------------------ API methods ------------------------------
-  async saveLead(body: any): Promise<void> {
-    // NEEDS TO BE IMPLEMENTED
-    const result = await this.campaignApi.cartsCreate(body);
+  async setSaveLead(): Promise<void> {
+    const emailElement = document.querySelector(
+      this.elementsProperties.fields.email.selector
+    ) as HTMLInputElement;
+    const firstNameElement = document.querySelector(
+      this.elementsProperties.fields.address.shipping.first_name.selector
+    ) as HTMLInputElement;
+    const lastNameElement = document.querySelector(
+      this.elementsProperties.fields.address.shipping.last_name.selector
+    ) as HTMLInputElement;
 
-    if (this.developing) {
-      console.log(`saveLead method result:`, result);
+    if (emailElement && firstNameElement && lastNameElement) {
+      const email_reg = {
+        test: /(?:[a-z0-9+!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/gi,
+      };
+
+      const tryToSendLead = async () => {
+        if (this.developing) {
+          console.log(`tryToSendLead method called`);
+        }
+
+        if (
+          !this.sentLead &&
+          emailElement.value.match(email_reg.test) &&
+          firstNameElement.value !== "" &&
+          lastNameElement.value !== ""
+        ) {
+          const orderData = {
+            attribution: this.ordersCreateMethods.getAttributionData(),
+            lines: this.ordersCreateMethods.getCartLines(),
+            user: {
+              first_name: firstNameElement.value,
+              last_name: lastNameElement.value,
+              email: emailElement.value,
+              language: "en",
+            },
+          };
+
+          const result = await this.campaignApi.cartsCreate(orderData);
+
+          if (this.developing) {
+            console.log(`tryToSendLead method result:`, result);
+          }
+
+          if (result.user) {
+            this.sentLead = true;
+          }
+        }
+      };
+
+      firstNameElement.addEventListener("blur", tryToSendLead);
+      lastNameElement.addEventListener("blur", tryToSendLead);
+      emailElement.addEventListener("blur", tryToSendLead);
     }
+  }
+
+  private showError(msg: string): void {
+
   }
 
   async ordersCreate(card_token: string): Promise<void> {
     const $$ = document.querySelector.bind(document);
 
-    const fieldsValues = sessionStorage.getItem("validFieldsValues");
-    if (fieldsValues === null) {
-      throw new Error(
-        "No fields values found in sessionStorage, please call storeInSessionPageValidFieldsValues before calling ordersCreate"
-      );
-    }
-    const { shipping, billing, email } = JSON.parse(fieldsValues);
+    const { shipping, billing, email } = this.getStoragedPageValidFieldsValues();
 
     const { use_default_billing_address, use_default_shipping_address } =
       this.elementsProperties.checkboxes;
@@ -481,7 +540,7 @@ class CheckoutFlow {
     const billSameShip = this.billingSameAsShippingAddress();
     const nextUrl = defaultGetNextUrl();
 
-    const bodyData: RequestOrdersCreate = {
+    const bodyData: OrdersCreateCard = {
       attribution: this.ordersCreateMethods.getAttributionData(),
       billing_same_as_shipping_address: billSameShip,
       lines: this.ordersCreateMethods.getCartLines(),
@@ -537,8 +596,47 @@ class CheckoutFlow {
     }
   }
 
-  async createPPOrder(): Promise<void> {
-    // NEEDS TO BE IMPLEMENTED
+  async createPayPalOrder(): Promise<void> {
+    const { shipping } = this.getStoragedPageValidFieldsValues();
+    const nextUrl = defaultGetNextUrl();
+
+    const bodyData: OrdersCreatePaypal = {
+      user: {
+        first_name: shipping.first_name,
+        last_name: shipping.last_name,
+        email: shipping.email,
+        language: "en",
+      },
+      lines: this.ordersCreateMethods.getCartLines(),
+      payment_detail: {
+        payment_method: "paypal",
+      },
+      shipping_method: this.ordersCreateMethods.getShippingMethod(),
+      success_url: nextUrl,
+    };
+
+    if (this.developing) {
+      console.log(`createPayPalOrder method body data:`, bodyData);
+    }
+
+    const result = await this.campaignApi.ordersCreate(bodyData);
+
+    if (this.developing) {
+      console.log(`createPayPalOrder method result:`, result);
+    }
+
+    if (!result.number) {
+      this.showError("Something went wrong");
+      return;
+    }
+
+    if (!result.payment_complete_url && result.number && result.ref_id) {
+      sessionStorage.setItem("order_ref_id", result.ref_id);
+      sessionStorage.setItem("order_number", result.number);
+      window.location.href = nextUrl;
+    } else if (result.payment_complete_url) {
+      window.location.href = result.payment_complete_url;
+    }
   }
 }
 
