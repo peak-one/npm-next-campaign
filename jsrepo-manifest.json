@@ -58,6 +58,93 @@
 			]
 		},
 		{
+			"name": "scripts",
+			"blocks": [
+				{
+					"name": "campaign",
+					"directory": "src/scripts",
+					"category": "scripts",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"campaign.ts"
+					],
+					"localDependencies": [
+						"api/nextCampaignApi"
+					],
+					"_imports_": {
+						"../api/nextCampaignApi": "{{api/nextCampaignApi}}"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "checkout",
+					"directory": "src/scripts",
+					"category": "scripts",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"checkout.ts"
+					],
+					"localDependencies": [
+						"services/spreedlyIframe",
+						"scripts/checkoutFlow"
+					],
+					"_imports_": {
+						"../services/spreedlyIframe": "{{services/spreedlyIframe}}",
+						"./checkoutFlow": "{{scripts/checkoutFlow}}"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "checkoutFlow",
+					"directory": "src/scripts",
+					"category": "scripts",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"checkoutFlow.ts"
+					],
+					"localDependencies": [
+						"services/checkoutFlow",
+						"scripts/campaign"
+					],
+					"_imports_": {
+						"../services/checkoutFlow": "{{services/checkoutFlow}}",
+						"./campaign": "{{scripts/campaign}}"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "upsell",
+					"directory": "src/scripts",
+					"category": "scripts",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"upsell.ts"
+					],
+					"localDependencies": [
+						"services/upsell",
+						"scripts/campaign"
+					],
+					"_imports_": {
+						"../services/upsell": "{{services/upsell}}",
+						"./campaign": "{{scripts/campaign}}"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				}
+			]
+		},
+		{
 			"name": "services",
 			"blocks": [
 				{
