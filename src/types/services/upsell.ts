@@ -1,4 +1,4 @@
-import { CartLine } from "../campaignsApi/base/CartLine";
+import { CartLine } from "../base/CartLine";
 
 interface Selector {
   selector: string;

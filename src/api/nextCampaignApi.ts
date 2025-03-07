@@ -1,9 +1,9 @@
-import CartForm from "../types/campaignsApi/requests/CartForm";
-import { OrdersCreateCard, OrdersCreatePaypal } from "../types/campaignsApi/requests/OrderForm";
-import UpsellForm from "../types/campaignsApi/requests/UpsellForm";
-import Campaign from "../types/campaignsApi/responses/Campaign";
-import Cart from "../types/campaignsApi/responses/Cart";
-import Order from "../types/campaignsApi/responses/Order";
+import CartForm from "../types/requests/CartForm";
+import { OrdersCreateCard, OrdersCreatePaypal } from "../types/requests/OrderForm";
+import UpsellForm from "../types/requests/UpsellForm";
+import Campaign from "../types/responses/Campaign";
+import Cart from "../types/responses/Cart";
+import Order from "../types/responses/Order";
 
 class NextCampaignApi {
   private baseUrl: string;

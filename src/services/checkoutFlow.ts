@@ -17,7 +17,7 @@ import {
   IPhoneElementProperties,
   ordersCreateMethods,
 } from "../types/services/checkoutFlow";
-import { OrdersCreateCard, OrdersCreatePaypal } from "../types/campaignsApi/requests/OrderForm";
+import { OrdersCreateCard, OrdersCreatePaypal } from "../types/requests/OrderForm";
 import { DeepPartial } from "../types/DeepPartial.js";
 declare global {
   interface Window {

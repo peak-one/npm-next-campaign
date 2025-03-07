@@ -1,5 +1,5 @@
 import NextCampaignApi from "../api/nextCampaignApi";
-import Order from "../types/campaignsApi/responses/Order";
+import Order from "../types/responses/Order";
 
 class Thankyou {
   private developing: boolean;

@@ -1,7 +1,7 @@
 import { FieldRuleInterface } from "just-validate";
-import { CartLine } from "../campaignsApi/base/CartLine";
+import { CartLine } from "../base/CartLine";
 import { Iti } from "intl-tel-input";
-import { Attribution } from "../campaignsApi/base/Attribution";
+import { Attribution } from "../base/Attribution";
 
 interface Selector {
   selector: string;

@@ -1,4 +1,4 @@
-import { Attribution } from "../types/campaignsApi/base/Attribution";
+import { Attribution } from "../types/base/Attribution";
 
 function defaultGetAttributionData(): Attribution {
   let device;

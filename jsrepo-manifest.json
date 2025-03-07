@@ -14,15 +14,16 @@
 						"nextCampaignApi.ts"
 					],
 					"localDependencies": [
-						"types/campaignsApi"
+						"types/requests",
+						"types/responses"
 					],
 					"_imports_": {
-						"../types/campaignsApi/requests/CartForm": "{{types/campaignsApi}}/requests/CartForm",
-						"../types/campaignsApi/requests/OrderForm": "{{types/campaignsApi}}/requests/OrderForm",
-						"../types/campaignsApi/requests/UpsellForm": "{{types/campaignsApi}}/requests/UpsellForm",
-						"../types/campaignsApi/responses/Campaign": "{{types/campaignsApi}}/responses/Campaign",
-						"../types/campaignsApi/responses/Cart": "{{types/campaignsApi}}/responses/Cart",
-						"../types/campaignsApi/responses/Order": "{{types/campaignsApi}}/responses/Order"
+						"../types/requests/CartForm": "{{types/requests}}/CartForm",
+						"../types/requests/OrderForm": "{{types/requests}}/OrderForm",
+						"../types/requests/UpsellForm": "{{types/requests}}/UpsellForm",
+						"../types/responses/Campaign": "{{types/responses}}/Campaign",
+						"../types/responses/Cart": "{{types/responses}}/Cart",
+						"../types/responses/Order": "{{types/responses}}/Order"
 					},
 					"dependencies": [],
 					"devDependencies": []
@@ -161,7 +162,7 @@
 						"api/nextCampaignApi",
 						"utils/index",
 						"types/services",
-						"types/campaignsApi",
+						"types/requests",
 						"types/DeepPartial",
 						"configs/services"
 					],
@@ -169,7 +170,7 @@
 						"../api/nextCampaignApi": "{{api/nextCampaignApi}}",
 						"../utils/index.js": "{{utils/index}}.js",
 						"../types/services/checkoutFlow": "{{types/services}}/checkoutFlow",
-						"../types/campaignsApi/requests/OrderForm": "{{types/campaignsApi}}/requests/OrderForm",
+						"../types/requests/OrderForm": "{{types/requests}}/OrderForm",
 						"../types/DeepPartial.js": "{{types/DeepPartial}}.js",
 						"../configs/services/defaultCheckoutElementsProps": "{{configs/services}}/defaultCheckoutElementsProps"
 					},
@@ -210,11 +211,11 @@
 					],
 					"localDependencies": [
 						"api/nextCampaignApi",
-						"types/campaignsApi"
+						"types/responses"
 					],
 					"_imports_": {
 						"../api/nextCampaignApi": "{{api/nextCampaignApi}}",
-						"../types/campaignsApi/responses/Order": "{{types/campaignsApi}}/responses/Order"
+						"../types/responses/Order": "{{types/responses}}/Order"
 					},
 					"dependencies": [],
 					"devDependencies": []
@@ -252,13 +253,20 @@
 			"name": "types",
 			"blocks": [
 				{
-					"name": "campaignsApi",
-					"directory": "src/types/campaignsApi",
+					"name": "base",
+					"directory": "src/types/base",
 					"category": "types",
 					"tests": false,
 					"subdirectory": true,
 					"list": true,
-					"files": [],
+					"files": [
+						"Address.ts",
+						"Attribution.ts",
+						"CartLine.ts",
+						"Discount.ts",
+						"Package.ts",
+						"User.ts"
+					],
 					"localDependencies": [],
 					"dependencies": [],
 					"devDependencies": [],
@@ -280,6 +288,55 @@
 					"devDependencies": []
 				},
 				{
+					"name": "requests",
+					"directory": "src/types/requests",
+					"category": "types",
+					"tests": false,
+					"subdirectory": true,
+					"list": true,
+					"files": [
+						"CartForm.ts",
+						"OrderForm.ts",
+						"UpsellForm.ts"
+					],
+					"localDependencies": [
+						"types/base"
+					],
+					"dependencies": [],
+					"devDependencies": [],
+					"_imports_": {
+						"../base/Address": "{{types/base}}/Address",
+						"../base/Attribution": "{{types/base}}/Attribution",
+						"../base/CartLine": "{{types/base}}/CartLine",
+						"../base/User": "{{types/base}}/User"
+					}
+				},
+				{
+					"name": "responses",
+					"directory": "src/types/responses",
+					"category": "types",
+					"tests": false,
+					"subdirectory": true,
+					"list": true,
+					"files": [
+						"Campaign.ts",
+						"Cart.ts",
+						"Order.ts"
+					],
+					"localDependencies": [
+						"types/base"
+					],
+					"dependencies": [],
+					"devDependencies": [],
+					"_imports_": {
+						"../base/Attribution": "{{types/base}}/Attribution",
+						"../base/Discount": "{{types/base}}/Discount",
+						"../base/Package": "{{types/base}}/Package",
+						"../base/User": "{{types/base}}/User",
+						"../base/Address": "{{types/base}}/Address"
+					}
+				},
+				{
 					"name": "services",
 					"directory": "src/types/services",
 					"category": "types",
@@ -292,7 +349,7 @@
 						"upsell.ts"
 					],
 					"localDependencies": [
-						"types/campaignsApi"
+						"types/base"
 					],
 					"dependencies": [
 						"just-validate@^4.3.0",
@@ -300,8 +357,8 @@
 					],
 					"devDependencies": [],
 					"_imports_": {
-						"../campaignsApi/base/CartLine": "{{types/campaignsApi}}/base/CartLine",
-						"../campaignsApi/base/Attribution": "{{types/campaignsApi}}/base/Attribution"
+						"../base/CartLine": "{{types/base}}/CartLine",
+						"../base/Attribution": "{{types/base}}/Attribution"
 					}
 				}
 			]
@@ -320,10 +377,10 @@
 						"defaultGetAttributionData.ts"
 					],
 					"localDependencies": [
-						"types/campaignsApi"
+						"types/base"
 					],
 					"_imports_": {
-						"../types/campaignsApi/base/Attribution": "{{types/campaignsApi}}/base/Attribution"
+						"../types/base/Attribution": "{{types/base}}/Attribution"
 					},
 					"dependencies": [],
 					"devDependencies": []
@@ -339,10 +396,10 @@
 						"defaultGetCartLines.ts"
 					],
 					"localDependencies": [
-						"types/campaignsApi"
+						"types/base"
 					],
 					"_imports_": {
-						"../types/campaignsApi/base/CartLine": "{{types/campaignsApi}}/base/CartLine"
+						"../types/base/CartLine": "{{types/base}}/CartLine"
 					},
 					"dependencies": [],
 					"devDependencies": []

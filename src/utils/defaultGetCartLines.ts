@@ -1,4 +1,4 @@
-import { CartLine } from "../types/campaignsApi/base/CartLine";
+import { CartLine } from "../types/base/CartLine";
 
 function defaultGetCartLines(
   selectedItemSelector: string,
