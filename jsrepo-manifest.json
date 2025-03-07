@@ -71,13 +71,11 @@
 					"files": [
 						"campaign.ts"
 					],
-					"localDependencies": [
-						"api/nextCampaignApi"
+					"localDependencies": [],
+					"_imports_": {},
+					"dependencies": [
+						"next-campaign"
 					],
-					"_imports_": {
-						"../api/nextCampaignApi": "{{api/nextCampaignApi}}"
-					},
-					"dependencies": [],
 					"devDependencies": []
 				},
 				{
@@ -91,14 +89,14 @@
 						"checkout.ts"
 					],
 					"localDependencies": [
-						"services/spreedlyIframe",
 						"scripts/checkoutFlow"
 					],
 					"_imports_": {
-						"../services/spreedlyIframe": "{{services/spreedlyIframe}}",
 						"./checkoutFlow": "{{scripts/checkoutFlow}}"
 					},
-					"dependencies": [],
+					"dependencies": [
+						"next-campaign"
+					],
 					"devDependencies": []
 				},
 				{
@@ -112,14 +110,14 @@
 						"checkoutFlow.ts"
 					],
 					"localDependencies": [
-						"services/checkoutFlow",
 						"scripts/campaign"
 					],
 					"_imports_": {
-						"../services/checkoutFlow": "{{services/checkoutFlow}}",
 						"./campaign": "{{scripts/campaign}}"
 					},
-					"dependencies": [],
+					"dependencies": [
+						"next-campaign"
+					],
 					"devDependencies": []
 				},
 				{
@@ -133,14 +131,14 @@
 						"upsell.ts"
 					],
 					"localDependencies": [
-						"services/upsell",
 						"scripts/campaign"
 					],
 					"_imports_": {
-						"../services/upsell": "{{services/upsell}}",
 						"./campaign": "{{scripts/campaign}}"
 					},
-					"dependencies": [],
+					"dependencies": [
+						"next-campaign"
+					],
 					"devDependencies": []
 				}
 			]

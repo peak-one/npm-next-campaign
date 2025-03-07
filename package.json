@@ -1,16 +1,21 @@
 {
 	"name": "next-campaign",
 	"version": "1.0.0",
-	"private": true,
+	"private": false,
 	"type": "module",
 	"exports": {
 		"import": "./dist/src/index.js"
 	},
 	"main": "dist/src/index.js",
 	"types": "dist/src/index.d.ts",
+	"files": [
+		"dist"
+	],
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build:registry": "jsrepo build"
+		"build:registry": "jsrepo build",
+		"build": "npx tsc",
+		"prepare": "npm run build"
 	},
 	"keywords": [],
 	"author": "Lucas Koyama",
