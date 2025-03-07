@@ -1,27 +1,29 @@
 {
-  "name": "next-campaign",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "exports": {
-    "import": "./dist/src/index.js"
-  },
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "Lucas Koyama",
-  "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "@types/lodash": "^4.17.13",
-    "typescript": "^5.7.2"
-  },
-  "dependencies": {
-    "intl-tel-input": "^25.2.1",
-    "just-validate": "^4.3.0",
-    "lodash": "^4.17.21"
-  }
+	"name": "next-campaign",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		"import": "./dist/src/index.js"
+	},
+	"main": "dist/src/index.js",
+	"types": "dist/src/index.d.ts",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"build:registry": "jsrepo build"
+	},
+	"keywords": [],
+	"author": "Lucas Koyama",
+	"license": "ISC",
+	"description": "",
+	"devDependencies": {
+		"@types/lodash": "^4.17.13",
+		"typescript": "^5.7.2"
+	},
+	"dependencies": {
+		"intl-tel-input": "^25.2.1",
+		"jsrepo": "^1.42.0",
+		"just-validate": "^4.3.0",
+		"lodash": "^4.17.21"
+	}
 }

@@ -1,0 +1,378 @@
+{
+	"categories": [
+		{
+			"name": "api",
+			"blocks": [
+				{
+					"name": "nextCampaignApi",
+					"directory": "src/api",
+					"category": "api",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"nextCampaignApi.ts"
+					],
+					"localDependencies": [
+						"types/campaignsApi"
+					],
+					"_imports_": {
+						"../types/campaignsApi/requests/CartForm": "{{types/campaignsApi}}/requests/CartForm",
+						"../types/campaignsApi/requests/OrderForm": "{{types/campaignsApi}}/requests/OrderForm",
+						"../types/campaignsApi/requests/UpsellForm": "{{types/campaignsApi}}/requests/UpsellForm",
+						"../types/campaignsApi/responses/Campaign": "{{types/campaignsApi}}/responses/Campaign",
+						"../types/campaignsApi/responses/Cart": "{{types/campaignsApi}}/responses/Cart",
+						"../types/campaignsApi/responses/Order": "{{types/campaignsApi}}/responses/Order"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				}
+			]
+		},
+		{
+			"name": "configs",
+			"blocks": [
+				{
+					"name": "services",
+					"directory": "src/configs/services",
+					"category": "configs",
+					"tests": false,
+					"subdirectory": true,
+					"list": true,
+					"files": [
+						"defaultCheckoutElementsProps.ts",
+						"defaultUpsellElementsProps.ts"
+					],
+					"localDependencies": [
+						"types/services"
+					],
+					"dependencies": [
+						"just-validate@^4.3.0"
+					],
+					"devDependencies": [],
+					"_imports_": {
+						"../../types/services/checkoutFlow": "{{types/services}}/checkoutFlow",
+						"../../types/services/upsell": "{{types/services}}/upsell"
+					}
+				}
+			]
+		},
+		{
+			"name": "services",
+			"blocks": [
+				{
+					"name": "checkoutFlow",
+					"directory": "src/services",
+					"category": "services",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"checkoutFlow.ts"
+					],
+					"localDependencies": [
+						"api/nextCampaignApi",
+						"utils/index",
+						"types/services",
+						"types/campaignsApi",
+						"types/DeepPartial",
+						"configs/services"
+					],
+					"_imports_": {
+						"../api/nextCampaignApi": "{{api/nextCampaignApi}}",
+						"../utils/index.js": "{{utils/index}}.js",
+						"../types/services/checkoutFlow": "{{types/services}}/checkoutFlow",
+						"../types/campaignsApi/requests/OrderForm": "{{types/campaignsApi}}/requests/OrderForm",
+						"../types/DeepPartial.js": "{{types/DeepPartial}}.js",
+						"../configs/services/defaultCheckoutElementsProps": "{{configs/services}}/defaultCheckoutElementsProps"
+					},
+					"dependencies": [
+						"just-validate@^4.3.0",
+						"intl-tel-input@^25.2.1"
+					],
+					"devDependencies": []
+				},
+				{
+					"name": "spreedlyIframe",
+					"directory": "src/services",
+					"category": "services",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"spreedlyIframe.ts"
+					],
+					"localDependencies": [
+						"types/services"
+					],
+					"_imports_": {
+						"../types/services/spreedlyIframe": "{{types/services}}/spreedlyIframe"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "thankyou",
+					"directory": "src/services",
+					"category": "services",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"thankyou.ts"
+					],
+					"localDependencies": [
+						"api/nextCampaignApi",
+						"types/campaignsApi"
+					],
+					"_imports_": {
+						"../api/nextCampaignApi": "{{api/nextCampaignApi}}",
+						"../types/campaignsApi/responses/Order": "{{types/campaignsApi}}/responses/Order"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "upsell",
+					"directory": "src/services",
+					"category": "services",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"upsell.ts"
+					],
+					"localDependencies": [
+						"api/nextCampaignApi",
+						"utils/index",
+						"types/services",
+						"configs/services"
+					],
+					"_imports_": {
+						"../api/nextCampaignApi": "{{api/nextCampaignApi}}",
+						"../utils/index.js": "{{utils/index}}.js",
+						"../types/services/upsell": "{{types/services}}/upsell",
+						"../configs/services/defaultUpsellElementsProps": "{{configs/services}}/defaultUpsellElementsProps"
+					},
+					"dependencies": [
+						"lodash@^4.17.21"
+					],
+					"devDependencies": []
+				}
+			]
+		},
+		{
+			"name": "types",
+			"blocks": [
+				{
+					"name": "campaignsApi",
+					"directory": "src/types/campaignsApi",
+					"category": "types",
+					"tests": false,
+					"subdirectory": true,
+					"list": true,
+					"files": [],
+					"localDependencies": [],
+					"dependencies": [],
+					"devDependencies": [],
+					"_imports_": {}
+				},
+				{
+					"name": "DeepPartial",
+					"directory": "src/types",
+					"category": "types",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"DeepPartial.ts"
+					],
+					"localDependencies": [],
+					"_imports_": {},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "services",
+					"directory": "src/types/services",
+					"category": "types",
+					"tests": false,
+					"subdirectory": true,
+					"list": true,
+					"files": [
+						"checkoutFlow.ts",
+						"spreedlyIframe.ts",
+						"upsell.ts"
+					],
+					"localDependencies": [
+						"types/campaignsApi"
+					],
+					"dependencies": [
+						"just-validate@^4.3.0",
+						"intl-tel-input@^25.2.1"
+					],
+					"devDependencies": [],
+					"_imports_": {
+						"../campaignsApi/base/CartLine": "{{types/campaignsApi}}/base/CartLine",
+						"../campaignsApi/base/Attribution": "{{types/campaignsApi}}/base/Attribution"
+					}
+				}
+			]
+		},
+		{
+			"name": "utils",
+			"blocks": [
+				{
+					"name": "defaultGetAttributionData",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"defaultGetAttributionData.ts"
+					],
+					"localDependencies": [
+						"types/campaignsApi"
+					],
+					"_imports_": {
+						"../types/campaignsApi/base/Attribution": "{{types/campaignsApi}}/base/Attribution"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "defaultGetCartLines",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"defaultGetCartLines.ts"
+					],
+					"localDependencies": [
+						"types/campaignsApi"
+					],
+					"_imports_": {
+						"../types/campaignsApi/base/CartLine": "{{types/campaignsApi}}/base/CartLine"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "defaultGetNextUrl",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"defaultGetNextUrl.ts"
+					],
+					"localDependencies": [],
+					"_imports_": {},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "defaultGetShippingMethod",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"defaultGetShippingMethod.ts"
+					],
+					"localDependencies": [],
+					"_imports_": {},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "defaultGetVouchers",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"defaultGetVouchers.ts"
+					],
+					"localDependencies": [],
+					"_imports_": {},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "index",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"index.ts"
+					],
+					"localDependencies": [
+						"utils/defaultGetAttributionData",
+						"utils/defaultGetCartLines",
+						"utils/defaultGetNextUrl",
+						"utils/defaultGetShippingMethod",
+						"utils/defaultGetVouchers",
+						"utils/mergeCustomPropertiesWithDefault",
+						"utils/wrapMethod"
+					],
+					"_imports_": {
+						"./defaultGetAttributionData": "{{utils/defaultGetAttributionData}}",
+						"./defaultGetCartLines": "{{utils/defaultGetCartLines}}",
+						"./defaultGetNextUrl": "{{utils/defaultGetNextUrl}}",
+						"./defaultGetShippingMethod": "{{utils/defaultGetShippingMethod}}",
+						"./defaultGetVouchers": "{{utils/defaultGetVouchers}}",
+						"./mergeCustomPropertiesWithDefault": "{{utils/mergeCustomPropertiesWithDefault}}",
+						"./wrapMethod": "{{utils/wrapMethod}}"
+					},
+					"dependencies": [],
+					"devDependencies": []
+				},
+				{
+					"name": "mergeCustomPropertiesWithDefault",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"mergeCustomPropertiesWithDefault.ts"
+					],
+					"localDependencies": [
+						"types/DeepPartial"
+					],
+					"_imports_": {
+						"../types/DeepPartial": "{{types/DeepPartial}}"
+					},
+					"dependencies": [
+						"lodash@^4.17.21"
+					],
+					"devDependencies": []
+				},
+				{
+					"name": "wrapMethod",
+					"directory": "src/utils",
+					"category": "utils",
+					"tests": false,
+					"subdirectory": false,
+					"list": true,
+					"files": [
+						"wrapMethod.ts"
+					],
+					"localDependencies": [],
+					"_imports_": {},
+					"dependencies": [],
+					"devDependencies": []
+				}
+			]
+		}
+	]
+}
