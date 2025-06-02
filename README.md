@@ -35,6 +35,8 @@ To integrate 29next in less than 3 hours
 | Checkbox for "use default shipping address" to the user | use_default_shipping_address     | [data-default-shipping-address]         | N/A                             | False                      |
 | Payment Method Element for Card                         | card_token                       | [data-payment-method-card]              | N/A                             | N/A                        |
 | Payment Method Element for Paypal                       | paypal                           | [data-payment-method-paypal]            | N/A                             | N/A                        |
+| Div for the bankcard number      | cardNumber                    | #bankcard-number                         | N/A                             | N/A                        |
+| Div for the bankcard CVV      | cardCvv                    | #bankcard-cvv                        | N/A                             | N/A                        |
 | DEFAULT **SELECTOR** FOR THE SELECTED ELEMENT/ITEM      | selectedItems                    | [data-selected]                         | N/A                             | N/A                        |
 | Dataset inserted for the package id insert this on a possible "selected item" element      | id                   | [data-id="1"]                         | N/A                             | N/A                        |
 | Dataset inserted for the package quantity insert this on a possible "selected item"      | quantity                    | [data-quantity="1"]                         | N/A                             | N/A                        |
