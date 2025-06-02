@@ -1,5 +1,5 @@
 ## OKR
-![image](./OKR.png)
+To integrate 29next in less than 3 hours
 
 
 ## CheckoutFlow parameter `elementsCustomProperties` default values
@@ -36,4 +36,5 @@
 | Payment Method Element for Card                         | card_token                       | [data-payment-method-card]              | N/A                             | N/A                        |
 | Payment Method Element for Paypal                       | paypal                           | [data-payment-method-paypal]            | N/A                             | N/A                        |
 | DEFAULT **SELECTOR** FOR THE SELECTED ELEMENT/ITEM      | selectedItems                    | [data-selected]                         | N/A                             | N/A                        |
-
+| Dataset inserted for the package id insert this on a possible "selected item" element      | id                   | [data-id="1"]                         | N/A                             | N/A                        |
+| Dataset inserted for the package quantity insert this on a possible "selected item"      | quantity                    | [data-quantity="1"]                         | N/A                             | N/A                        |
